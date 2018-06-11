@@ -8,4 +8,5 @@ public class AndroidAZPlayer extends Application {
     public void onCreate() {
         super.onCreate();
     }
+
 }
