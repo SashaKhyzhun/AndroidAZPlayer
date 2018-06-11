@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:windowEnableSplitTouch="false"
+    android:splitMotionEvents="false"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+
+    <!--<android.support.design.widget.AppBarLayout-->
+        <!--xmlns:app="http://schemas.android.com/apk/res-auto"-->
+        <!--xmlns:android="http://schemas.android.com/apk/res/android"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="?attr/actionBarSize"-->
+        <!--android:id="@+id/appbar_main" >-->
+        <!--<android.support.v7.widget.Toolbar-->
+            <!--android:id="@+id/toolbar_main"-->
+            <!--app:title="@string/app_name"-->
+            <!--app:titleTextColor="@color/white"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="?attr/actionBarSize"-->
+            <!--/>-->
+
+    <!--</android.support.design.widget.AppBarLayout>-->
+
+
+    <FrameLayout
+        android:id="@+id/frame_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+       <!-- app:layout_behavior="@string/appbar_scrolling_view_behavior" /> -->
+
+
+
+</LinearLayout>
