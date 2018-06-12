@@ -1,5 +1,6 @@
 package com.sashakhyzhun.androidazplayer.ui.main;
 
+import android.annotation.SuppressLint;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
@@ -14,7 +15,8 @@ import android.view.ViewGroup;
 import com.sashakhyzhun.androidazplayer.R;
 import com.sashakhyzhun.androidazplayer.data.model.Chunk;
 import com.sashakhyzhun.androidazplayer.ui.custom.PlayPauseView;
-import com.sashakhyzhun.androidazplayer.util.StaticUtil;
+import com.sashakhyzhun.androidazplayer.util.HlsHelper;
+import com.sashakhyzhun.androidazplayer.util.TextHelper;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -40,8 +42,8 @@ public class MainFragment extends Fragment {
 
     private static final String TAG = MainFragment.class.getSimpleName();
 
-    private boolean isFetchingSong = false;
-    private boolean songIsFetched = false;
+    private boolean isFetching = false;
+    private boolean isFetched = false;
     private int nextChunkArrive = 0;
     private ArrayList<Chunk> mChunks;
 
@@ -63,10 +65,10 @@ public class MainFragment extends Fragment {
         buttonPlay = (PlayPauseView) view.findViewById(R.id.playBtn);
         buttonPlay.setMediaPlayer(mp);
         buttonPlay.setClickedListener(v -> {
-             if (!songIsFetched) {
-                isFetchingSong = true;
+             if (!isFetched) {
+                isFetching = true;
                 buttonPlay.startFetching();
-                new FetchFile().execute();
+                new MyFetchAsync().execute();
                 return;
             }
             switch (buttonPlay.getState()) {
@@ -85,49 +87,48 @@ public class MainFragment extends Fragment {
     }
 
 
-    class FetchFile extends AsyncTask<Object, Object, File> {
+    @SuppressLint("StaticFieldLeak")
+    private class MyFetchAsync extends AsyncTask<Object, Object, File> {
 
         @Override
         protected File doInBackground(Object... params) {
             try {
                 String fullUrl = URL_BASE + URL_FILE;
-                String[] ext = getHLSFileForBestQuality(fullUrl).split("\n");
-                String bestAudio = "";
-                for (String s : ext) {
-                    if (s.contains(EXTM3U)) {
+                String[] exts = HlsHelper.retrieveHLS(fullUrl).split("\n");
+                String bestAudio = "-1";
+                for (String ext : exts) {
+                    if (ext.contains(EXTM3U)) {
                         continue;
                     }
-                    if (s.contains(TYPE_AUDIO)) {
-                        s = s.replace(EXT_X_MEDIA, "");
-                        s = s.replace("\"", "");
-                        Map<String, String> audio = StaticUtil.splitToMap(s, ",", "=");
-                        Log.d(TAG, s);
+                    if (ext.contains(TYPE_AUDIO)) {
+                        ext = ext.replace(EXT_X_MEDIA, "");
+                        ext = ext.replace("\"", "");
+                        Map<String, String> audio = TextHelper.splitToMap(ext, ",", "=");
                         bestAudio = audio.get("URI");
-                        Log.d(TAG, audio.get("URI"));
                     } else {
-                        if (!bestAudio.equals("")) {
+                        if (!bestAudio.equals("-1")) {
                             break;
                         }
                     }
                 }
 
                 fullUrl = URL_BASE + bestAudio;
-                ext = getHLSFileForBestQuality(fullUrl).split("\n");
+                exts = HlsHelper.retrieveHLS(fullUrl).split("\n");
 
-                mChunks = StaticUtil.getAllChunks(ext);
+                mChunks = HlsHelper.getAllChunks(exts);
                 nextChunkArrive = 0;
 
 
                 for (int i = 0; i < mChunks.size(); i = i + 2) {
                     mChunks.get(i).setFilename("filename_" + i + MP3);
                     mChunks.get(i).setPos(i);
-                    Chunk c2 = null;
+                    Chunk chunk = null;
                     if (mChunks.size() - 1 > i + 1) {
                         mChunks.get(i + 1).setFilename("filename_" + (i + 1) + MP3);
                         mChunks.get(i + 1).setPos(i + 1);
-                        c2 = mChunks.get(i + 1);
+                        chunk = mChunks.get(i + 1);
                     }
-                    downloadAudio(mChunks.get(i), c2);
+                    downloadAudio(mChunks.get(i), chunk);
                 }
 
                 return null;
@@ -141,11 +142,11 @@ public class MainFragment extends Fragment {
         @Override
         protected void onPostExecute(File downloadingMediaFile) {
             super.onPostExecute(downloadingMediaFile);
-            if (downloadingMediaFile == null)
+            if (downloadingMediaFile == null) {
                 return;
+            }
         }
     }
-
 
 
 
@@ -159,7 +160,6 @@ public class MainFragment extends Fragment {
         if (chunkSecond != null) {
             t2.start();
         }
-
 
     }
 
@@ -247,7 +247,7 @@ public class MainFragment extends Fragment {
                 Log.d(TAG, String.valueOf(downloadingMediaFile.length()));
 
 
-                playSong(downloadingMediaFile);
+                play(downloadingMediaFile);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -255,7 +255,7 @@ public class MainFragment extends Fragment {
 
     }
 
-    private void playSong(File mediaFile) {
+    private void play(File mediaFile) {
         Log.d(TAG, String.valueOf(mediaFile.getAbsolutePath()));
         try {
             FileInputStream fileInputStream = new FileInputStream(mediaFile);
@@ -267,8 +267,8 @@ public class MainFragment extends Fragment {
             fileInputStream.close();
             mp.setOnCompletionListener(mp -> {
                 buttonPlay.setState(PlayPauseView.BUTTON_STATE.STATE_COMPLETED);
-                songIsFetched = false;
-                isFetchingSong = false;
+                isFetched = false;
+                isFetching = false;
                 if (downloadingMediaFile != null) {
                     downloadingMediaFile.delete();
                 }
@@ -286,41 +286,15 @@ public class MainFragment extends Fragment {
             ee.printStackTrace();
         }
 
-        isFetchingSong = false;
-        songIsFetched = true;
-    }
-
-    public String getHLSFileForBestQuality(String _url) throws Exception {
-        URL url = new URL(_url);
-        URLConnection con = url.openConnection();
-
-        HttpURLConnection connection = (HttpURLConnection) con;
-        connection.setRequestMethod("GET");
-        connection.connect();
-
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            Log.d(TAG, "Server returned HTTP " + connection.getResponseCode()
-                    + " " + connection.getResponseMessage());
-        }
-
-        InputStream input = new BufferedInputStream(url.openStream());
-        StringBuilder tt = new StringBuilder();
-        byte _data[] = new byte[1024];
-
-        int count;
-        while ((count = input.read(_data)) != -1) {
-            tt.append(new String(_data));
-        }
-
-        return tt.toString();
+        isFetching = false;
+        isFetched = true;
     }
 
 
-
-
-
-
-
-
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        System.gc();
+    }
 
 }
