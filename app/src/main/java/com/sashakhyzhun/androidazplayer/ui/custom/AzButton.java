@@ -23,7 +23,7 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.LinearLayout;
 
-import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dipToPixels;
+import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
 
@@ -51,9 +51,9 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     private GestureDetector gestureDetector;
     private OnClickListener mListener;
     private MediaPlayer mMediaPlayer;
-    private Paint paintArch;
-    private Paint paintRect;
-    private Paint paint;
+    private Paint fetchingCircleLineAround;
+    private Paint pauseViewInsideRect;
+    private Paint playerButtonPaint;
     private RectF rectArch;
     private Rect rectangle;
 
@@ -86,61 +86,71 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     //todo: check it
     private void init(Context context, AttributeSet attrs) {
         gestureDetector = new GestureDetector(context, new SingleTapConfirm());
+
+        // onClicks
         setOnClickListener(this);
         setOnTouchListener(this);
 
-        preferedWidth = (int) dipToPixels(context, _preferedWidthDP);
-        preferedPadding = (int) dipToPixels(context, 4);
+        // display sizes
+        preferedWidth = (int) dimension(context, _preferedWidthDP);
+        preferedPadding = (int) dimension(context, 4);
+
+        // set up the layout params
         setLayoutParams(new LinearLayout.LayoutParams(_preferedWidthDP, _preferedWidthDP));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setElevation(10F);
-        }
         setPadding(preferedPadding, preferedPadding, preferedPadding, preferedPadding);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) { setElevation(10F); }
 
-        paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.BLUE);
+        // create the Player Main view
+        playerButtonPaint = new Paint();
+        playerButtonPaint.setAntiAlias(true);
+        playerButtonPaint.setColor(Color.BLACK);
 
+        // create the TRIANGLE inside the player
         trianglePaint = new Paint();
         trianglePaint.setColor(Color.WHITE);
         trianglePaint.setStyle(Paint.Style.FILL);
         trianglePoint = new Point();
 
-        // create the Paint and set its color
-        paintRect = new Paint();
-        paintRect.setColor(Color.WHITE);
-
-        rectangle = new Rect(0, 0, 0, 0);
-
-        Paint paintFetching = new Paint();
-        paintFetching.setStyle(Paint.Style.STROKE);
-        paintFetching.setColor(Color.WHITE);
-        paintFetching.setStrokeWidth(dipToPixels(context, 2));
+        // create the PAUSE inside the player
+        pauseViewInsideRect = new Paint();
+        pauseViewInsideRect.setColor(Color.GREEN);
 
 
-        paintFetching.setAlpha(255);
-        paintFetching.setAntiAlias(true);
 
-        RotateAnimation rotateAnim = new RotateAnimation(0, 360,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f);
+//        // create the FETCHING paint around the player like 'loading'
+//        Paint fetchingCircleAround = new Paint();
+//        fetchingCircleAround.setStyle(Paint.Style.STROKE);
+//        fetchingCircleAround.setColor(Color.MAGENTA);
+//        fetchingCircleAround.setStrokeWidth(dimension(context, 2));
+//        fetchingCircleAround.setAlpha(255);
+//        fetchingCircleAround.setAntiAlias(true);
 
+        // create the ROTATE ANIMATION as it is
+        RotateAnimation rotateAnim = new RotateAnimation(
+                0,
+                360,
+                Animation.RELATIVE_TO_SELF,
+                0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f
+        );
         rotateAnim.setDuration(1000);
         rotateAnim.setRepeatCount(Animation.INFINITE);
         rotateAnim.setRepeatMode(Animation.RESTART);
         rotateAnim.setInterpolator(new LinearInterpolator());
 
-        paintArch = new Paint();
-        paintArch.setAntiAlias(true);
-        paintArch.setStyle(Paint.Style.STROKE);
-        paintArch.setStrokeWidth(dipToPixels(context, 2));
-        paintArch.setColor(Color.WHITE);
+        // create the FETCHING paint around the player like 'loading'
+        fetchingCircleLineAround = new Paint();
+        fetchingCircleLineAround.setAntiAlias(true);
+        fetchingCircleLineAround.setStyle(Paint.Style.STROKE);
+        fetchingCircleLineAround.setStrokeWidth(dimension(context, 2));
+        fetchingCircleLineAround.setColor(Color.YELLOW);
 
-        //size 200x200 example
+        // size 228x228 example
         rectArch = new RectF(0, 0, 0, 0);
+        rectangle = new Rect(0, 0, 0, 0);
 
-        //Initial Angle (optional, it can be zero)
+        // Initial Angle (optional, it can be zero)
         angleArch = 120;
 
     }
@@ -152,66 +162,73 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         int usableWidth = preferedWidth;
         int usableHeight = preferedWidth;
 
+        // make it circle
         int mRadius = Math.min(usableWidth, usableHeight) / 2;
         int mCircleX = (usableWidth / 2);
         int mCircleY = (usableHeight / 2);
 
-        canvas.drawCircle(mCircleX, mCircleY, mRadius, paint);
+        canvas.drawCircle(mCircleX, mCircleY, mRadius, playerButtonPaint);
 
-        if (getState() == BUTTON_STATE.STATE_NORMAL || getState() == BUTTON_STATE.STATE_PAUSE || getState() == BUTTON_STATE.STATE_COMPLETED) {
+        switch (getState()) {
+            case STATE_NORMAL:
+            case STATE_PAUSE:
+            case STATE_COMPLETED:
 
-            int triangleWidth = (usableWidth / 2) - preferedPadding;
+                int triangleWidth = (usableWidth / 2) - preferedPadding;
 
-            trianglePoint.x = mCircleX - (triangleWidth / 2) + preferedPadding;
-            trianglePoint.y = mCircleY - (triangleWidth / 2);
-            Path trianglePath = getInsideTriangleCoordinates(trianglePoint, triangleWidth, directionWEST);
+                trianglePoint.x = mCircleX - (triangleWidth / 2) + preferedPadding;
+                trianglePoint.y = mCircleY - (triangleWidth / 2);
+                Path trianglePath = getInsideTriangleCoordinates(trianglePoint, triangleWidth, directionWEST);
 
-            canvas.drawPath(trianglePath, trianglePaint);
+                canvas.drawPath(trianglePath, trianglePaint);
 
-            if (getState() == BUTTON_STATE.STATE_PAUSE) {
+                if (getState() == BUTTON_STATE.STATE_PAUSE) {
+
+                    rectArch.left = preferedPadding / 2;
+                    rectArch.top = preferedPadding / 2;
+                    rectArch.right = (preferedWidth) - preferedPadding / 2;
+                    rectArch.bottom = preferedWidth - preferedPadding / 2;
+
+                    canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
+                }
+                break;
+            case STATE_PLAYING:
+
+                int width = (usableWidth / 3) - preferedPadding;
+
+                int x = mCircleX - width;
+                int y = mCircleY - width;
+
+                rectangle.top = y;
+                rectangle.left = x + (preferedPadding / 4);
+                rectangle.right = mCircleX - (preferedPadding / 2);
+                rectangle.bottom = mCircleY + width;
+                canvas.drawRect(rectangle, pauseViewInsideRect);
+
+                //second
+                rectangle.top = y;
+                rectangle.left = mCircleX + (preferedPadding / 2);
+                rectangle.right = mCircleX + (mCircleX - x) - (preferedPadding / 4);
+                rectangle.bottom = mCircleY + width;
+                canvas.drawRect(rectangle, pauseViewInsideRect);
 
                 rectArch.left = preferedPadding / 2;
                 rectArch.top = preferedPadding / 2;
                 rectArch.right = preferedWidth - preferedPadding / 2;
                 rectArch.bottom = preferedWidth - preferedPadding / 2;
 
-                canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, paintArch);
-            }
-        } else if (getState() == BUTTON_STATE.STATE_PLAYING) {
+                canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
 
-            int width = (usableWidth / 3) - preferedPadding;
+                break;
+            case STATE_FETCHING:
 
-            int x = mCircleX - width;
-            int y = mCircleY - width;
+                rectArch.left = preferedPadding / 2;
+                rectArch.top = preferedPadding / 2;
+                rectArch.right = preferedWidth - preferedPadding / 2;
+                rectArch.bottom = preferedWidth - preferedPadding / 2;
 
-            rectangle.top = y;
-            rectangle.left = x + (preferedPadding / 4);
-            rectangle.right = mCircleX - (preferedPadding / 2);
-            rectangle.bottom = mCircleY + width;
-            canvas.drawRect(rectangle, paintRect);
-
-            //second
-            rectangle.top = y;
-            rectangle.left = mCircleX + (preferedPadding / 2);
-            rectangle.right = mCircleX + (mCircleX - x) - (preferedPadding / 4);
-            rectangle.bottom = mCircleY + width;
-            canvas.drawRect(rectangle, paintRect);
-
-            rectArch.left = preferedPadding / 2;
-            rectArch.top = preferedPadding / 2;
-            rectArch.right = preferedWidth - preferedPadding / 2;
-            rectArch.bottom = preferedWidth - preferedPadding / 2;
-
-            canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, paintArch);
-
-        } else if (getState() == BUTTON_STATE.STATE_FETCHING) {
-
-            rectArch.left = preferedPadding / 2;
-            rectArch.top = preferedPadding / 2;
-            rectArch.right = preferedWidth - preferedPadding / 2;
-            rectArch.bottom = preferedWidth - preferedPadding / 2;
-
-            canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, paintArch);
+                canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
+                break;
         }
 
 
@@ -356,7 +373,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                             (event.getRawY() + oldValueY) > (getRootView().getY()
                                                 + getRootView().getHeight()
                                                 - view.getHeight()
-                                                - dipToPixels(view.getContext(), 24))) {
+                                                - dimension(view.getContext(), 24))) {
                         return false;
                     }
                     view.animate()
@@ -367,8 +384,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
                     break;
                 case MotionEvent.ACTION_UP:
-                    Log.i("ACTION_UP", "!!!!!");
-
                     break;
                 default:
                     break;

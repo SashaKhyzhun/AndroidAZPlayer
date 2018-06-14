@@ -6,7 +6,7 @@ import android.util.TypedValue;
 
 public class DeviceUtil {
 
-    public static float dipToPixels(Context context, float dipValue) {
+    public static float dimension(Context context, float dipValue) {
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics);
     }
