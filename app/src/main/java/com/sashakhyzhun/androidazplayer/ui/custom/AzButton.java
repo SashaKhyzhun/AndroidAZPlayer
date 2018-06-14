@@ -27,13 +27,9 @@ import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
 
+    private BUTTON_STATE mState = BUTTON_STATE.STATE_NORMAL;
     private boolean isFetchingAnimRunning = false;
     private float START_ANGLE_POINT = 90;
-
-    private int directionSOUTH = 1;
-    private int directionNORTH = 2;
-    private int directionEAST = 3;
-    private int directionWEST = 4;
 
     private int angleArch;
     private float oldValueX = 0;
@@ -41,10 +37,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     // size of the player
     private int preferedWidth = 0;
-    private int _preferedWidthDP = 56;
+    private int _preferedWidthDP = 100;
     private int preferedPadding = 0;
-
-    private BUTTON_STATE mState = BUTTON_STATE.STATE_NORMAL;
 
     private Point trianglePoint;
     private Paint trianglePaint;
@@ -54,8 +48,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     private Paint fetchingCircleLineAround;
     private Paint pauseViewInsideRect;
     private Paint playerButtonPaint;
-    private RectF rectArch;
-    private Rect rectangle;
+    private RectF playerRectArch;
+    private Rect playerRectAngle;
 
 
 
@@ -115,16 +109,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         pauseViewInsideRect = new Paint();
         pauseViewInsideRect.setColor(Color.GREEN);
 
-
-
-//        // create the FETCHING paint around the player like 'loading'
-//        Paint fetchingCircleAround = new Paint();
-//        fetchingCircleAround.setStyle(Paint.Style.STROKE);
-//        fetchingCircleAround.setColor(Color.MAGENTA);
-//        fetchingCircleAround.setStrokeWidth(dimension(context, 2));
-//        fetchingCircleAround.setAlpha(255);
-//        fetchingCircleAround.setAntiAlias(true);
-
         // create the ROTATE ANIMATION as it is
         RotateAnimation rotateAnim = new RotateAnimation(
                 0,
@@ -146,9 +130,9 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         fetchingCircleLineAround.setStrokeWidth(dimension(context, 2));
         fetchingCircleLineAround.setColor(Color.YELLOW);
 
-        // size 228x228 example
-        rectArch = new RectF(0, 0, 0, 0);
-        rectangle = new Rect(0, 0, 0, 0);
+        // size 228x228 4example
+        playerRectArch = new RectF(0, 0, 0, 0);
+        playerRectAngle = new Rect(0, 0, 0, 0);
 
         // Initial Angle (optional, it can be zero)
         angleArch = 120;
@@ -176,20 +160,21 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
                 int triangleWidth = (usableWidth / 2) - preferedPadding;
 
+                // triangle sizes
                 trianglePoint.x = mCircleX - (triangleWidth / 2) + preferedPadding;
                 trianglePoint.y = mCircleY - (triangleWidth / 2);
-                Path trianglePath = getInsideTriangleCoordinates(trianglePoint, triangleWidth, directionWEST);
 
+                Path trianglePath = getInsideTrianglePath(trianglePoint, triangleWidth);
                 canvas.drawPath(trianglePath, trianglePaint);
 
                 if (getState() == BUTTON_STATE.STATE_PAUSE) {
 
-                    rectArch.left = preferedPadding / 2;
-                    rectArch.top = preferedPadding / 2;
-                    rectArch.right = (preferedWidth) - preferedPadding / 2;
-                    rectArch.bottom = preferedWidth - preferedPadding / 2;
+                    playerRectArch.left = preferedPadding / 2;
+                    playerRectArch.top = preferedPadding / 2;
+                    playerRectArch.right = (preferedWidth) - preferedPadding / 2;
+                    playerRectArch.bottom = preferedWidth - preferedPadding / 2;
 
-                    canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
+                    canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
                 }
                 break;
             case STATE_PLAYING:
@@ -199,64 +184,47 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 int x = mCircleX - width;
                 int y = mCircleY - width;
 
-                rectangle.top = y;
-                rectangle.left = x + (preferedPadding / 4);
-                rectangle.right = mCircleX - (preferedPadding / 2);
-                rectangle.bottom = mCircleY + width;
-                canvas.drawRect(rectangle, pauseViewInsideRect);
+                playerRectAngle.top = y;
+                playerRectAngle.left = x + (preferedPadding / 4);
+                playerRectAngle.right = mCircleX - (preferedPadding / 2);
+                playerRectAngle.bottom = mCircleY + width;
+                canvas.drawRect(playerRectAngle, pauseViewInsideRect);
 
-                //second
-                rectangle.top = y;
-                rectangle.left = mCircleX + (preferedPadding / 2);
-                rectangle.right = mCircleX + (mCircleX - x) - (preferedPadding / 4);
-                rectangle.bottom = mCircleY + width;
-                canvas.drawRect(rectangle, pauseViewInsideRect);
+                playerRectAngle.top = y;
+                playerRectAngle.left = mCircleX + (preferedPadding / 2);
+                playerRectAngle.right = mCircleX + (mCircleX - x) - (preferedPadding / 4);
+                playerRectAngle.bottom = mCircleY + width;
+                canvas.drawRect(playerRectAngle, pauseViewInsideRect);
 
-                rectArch.left = preferedPadding / 2;
-                rectArch.top = preferedPadding / 2;
-                rectArch.right = preferedWidth - preferedPadding / 2;
-                rectArch.bottom = preferedWidth - preferedPadding / 2;
+                playerRectArch.left = preferedPadding / 2;
+                playerRectArch.top = preferedPadding / 2;
+                playerRectArch.right = preferedWidth - preferedPadding / 2;
+                playerRectArch.bottom = preferedWidth - preferedPadding / 2;
 
-                canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
+                canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
 
                 break;
             case STATE_FETCHING:
 
-                rectArch.left = preferedPadding / 2;
-                rectArch.top = preferedPadding / 2;
-                rectArch.right = preferedWidth - preferedPadding / 2;
-                rectArch.bottom = preferedWidth - preferedPadding / 2;
+                playerRectArch.left = preferedPadding / 2;
+                playerRectArch.top = preferedPadding / 2;
+                playerRectArch.right = preferedWidth - preferedPadding / 2;
+                playerRectArch.bottom = preferedWidth - preferedPadding / 2;
 
-                canvas.drawArc(rectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
+                canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
                 break;
         }
 
 
     }
 
-    //todo: check it
-    private Path getInsideTriangleCoordinates(Point p1, int width, int direction) {
-        Point p2 = null, p3 = null;
-
-        if (direction == directionNORTH) {
-            p2 = new Point(p1.x + width, p1.y);
-            p3 = new Point(p1.x + (width / 2), p1.y - width);
-        } else if (direction == directionSOUTH) {
-            p2 = new Point(p1.x + width, p1.y);
-            p3 = new Point(p1.x + (width / 2), p1.y + width);
-        } else if (direction == directionEAST) {
-            p2 = new Point(p1.x, p1.y + width);
-            p3 = new Point(p1.x - width, p1.y + (width / 2));
-        } else if (direction == directionWEST) {
-            p2 = new Point(p1.x, p1.y + width);
-            p3 = new Point(p1.x + width, p1.y + (width / 2));
-        }
-
+    private Path getInsideTrianglePath(Point point1, int width) {
+        Point point2 = new Point(point1.x, point1.y + width);
+        Point point3 = new Point(point1.x + width, point1.y + (width / 2));
         Path path = new Path();
-        path.moveTo(p1.x, p1.y);
-        path.lineTo(p2.x, p2.y);
-        path.lineTo(p3.x, p3.y);
-
+        path.moveTo(point1.x, point1.y);
+        path.lineTo(point2.x, point2.y);
+        path.lineTo(point3.x, point3.y);
         return path;
     }
 
@@ -267,6 +235,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     public void setState(BUTTON_STATE state) {
         mState = state;
         switch (state) {
+            case STATE_FETCHING:
+                Log.d("AzButton", "state_fetching = true");
             case STATE_PLAYING:
                 isFetchingAnimRunning = false;
                 startPlayingAnim();
@@ -285,18 +255,19 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         invalidate();
     }
 
-
     private void startFetchingAnim() {
         if (!isFetchingAnimRunning) {
             return;
         }
         Handler h = new Handler();
         h.postDelayed(() -> {
-            if (angleArch >= 350)
+            if (angleArch >= 350) {
                 angleArch = 0;
+            }
             angleArch += 10;
-            if (START_ANGLE_POINT >= 350)
+            if (START_ANGLE_POINT >= 350) {
                 START_ANGLE_POINT = 0;
+            }
             START_ANGLE_POINT += 10;
             invalidate();
             startFetchingAnim();
@@ -368,6 +339,16 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                     oldValueY = view.getY() - event.getRawY();
                     break;
                 case MotionEvent.ACTION_MOVE:
+                    Log.i("ACTION_MOVE", "getRootView.getX = " + getRootView().getX());
+                    Log.i("ACTION_MOVE", "getRootView.getY = " + getRootView().getY());
+                    Log.i("ACTION_MOVE", "---------------------------------------");
+                    Log.i("ACTION_MOVE", "event.getRawX    = " + event.getRawX());
+                    Log.i("ACTION_MOVE", "event.getRawY    = " + event.getRawY());
+                    Log.i("ACTION_MOVE", "---------------------------------------");
+                    Log.i("ACTION_MOVE", "view.getX        = " + view.getX());
+                    Log.i("ACTION_MOVE", "view.getY        = " + view.getY());
+
+
                     if ((event.getRawY() + oldValueY) < getRootView().getY()
                             ||
                             (event.getRawY() + oldValueY) > (getRootView().getY()

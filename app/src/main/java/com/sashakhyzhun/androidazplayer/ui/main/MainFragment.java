@@ -65,7 +65,7 @@ public class MainFragment extends Fragment {
         buttonPlay = (AzButton) view.findViewById(R.id.playBtn);
         buttonPlay.setMediaPlayer(mp);
         buttonPlay.setClickedListener(v -> {
-             if (!isFetched) {
+             if (!isFetched && !isFetching) {
                 isFetching = true;
                 buttonPlay.startFetching();
                 new MyFetchAsync().execute();
