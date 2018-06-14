@@ -17,10 +17,12 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.LinearLayout;
 
 import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
@@ -327,6 +329,9 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     @Override
     public boolean onTouch(View view, MotionEvent event) {
+
+        VelocityTracker mVelocityTracker = VelocityTracker.obtain();
+
         if (gestureDetector.onTouchEvent(event)) {
             if (mListener != null) {
                 mListener.onClick(view);
@@ -337,17 +342,23 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 case MotionEvent.ACTION_DOWN:
                     oldValueX = view.getX() - event.getRawX();
                     oldValueY = view.getY() - event.getRawY();
+
+                    mVelocityTracker.clear();
+                    mVelocityTracker.addMovement(event);
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    Log.i("ACTION_MOVE", "getRootView.getX = " + getRootView().getX());
-                    Log.i("ACTION_MOVE", "getRootView.getY = " + getRootView().getY());
-                    Log.i("ACTION_MOVE", "---------------------------------------");
-                    Log.i("ACTION_MOVE", "event.getRawX    = " + event.getRawX());
-                    Log.i("ACTION_MOVE", "event.getRawY    = " + event.getRawY());
-                    Log.i("ACTION_MOVE", "---------------------------------------");
-                    Log.i("ACTION_MOVE", "view.getX        = " + view.getX());
-                    Log.i("ACTION_MOVE", "view.getY        = " + view.getY());
+                    // finger (usually from the middle of the view)
+                    Log.d("ACTION_MOVE", "event.getRawX    = " + event.getRawX());
+                    Log.d("ACTION_MOVE", "event.getRawY    = " + event.getRawY());
+                    // X & Y of Player view (max left % max top)
+                    Log.d("ACTION_MOVE", "view.getX        = " + view.getX());
+                    Log.d("ACTION_MOVE", "view.getY        = " + view.getY());
 
+                    Log.d("ACTION_MOVE", "oldValueX        = " + oldValueX);
+                    Log.d("ACTION_MOVE", "oldValueY        = " + oldValueY);
+                    Log.d("ACTION_MOVE", "---------------------------------------");
+
+                    mVelocityTracker.addMovement(event);
 
                     if ((event.getRawY() + oldValueY) < getRootView().getY()
                             ||
@@ -362,9 +373,13 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                             .y(event.getRawY() + oldValueY)
                             .setDuration(0)
                             .start();
-
                     break;
                 case MotionEvent.ACTION_UP:
+                    
+                    //TranslateAnimation animation = new TranslateAnimation(fromX, toX, fromY, toY);
+                    //animation.setDuration(0);
+                    //view.startAnimation(animation);
+
                     break;
                 default:
                     break;
