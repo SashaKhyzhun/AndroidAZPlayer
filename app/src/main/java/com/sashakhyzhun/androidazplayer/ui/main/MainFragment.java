@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 
 import com.sashakhyzhun.androidazplayer.R;
 import com.sashakhyzhun.androidazplayer.data.model.Chunk;
-import com.sashakhyzhun.androidazplayer.ui.custom.PlayPauseView;
+import com.sashakhyzhun.androidazplayer.ui.custom.AzButton;
 import com.sashakhyzhun.androidazplayer.util.HlsHelper;
 import com.sashakhyzhun.androidazplayer.util.TextHelper;
 
@@ -48,7 +48,7 @@ public class MainFragment extends Fragment {
     private ArrayList<Chunk> mChunks;
 
     private MediaPlayer mp;
-    private PlayPauseView buttonPlay;
+    private AzButton buttonPlay;
     private File downloadingMediaFile;
 
     @Override
@@ -62,7 +62,7 @@ public class MainFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        buttonPlay = (PlayPauseView) view.findViewById(R.id.playBtn);
+        buttonPlay = (AzButton) view.findViewById(R.id.playBtn);
         buttonPlay.setMediaPlayer(mp);
         buttonPlay.setClickedListener(v -> {
              if (!isFetched) {
@@ -73,11 +73,11 @@ public class MainFragment extends Fragment {
             }
             switch (buttonPlay.getState()) {
                 case STATE_PLAYING:
-                    buttonPlay.setState(PlayPauseView.BUTTON_STATE.STATE_PAUSE);
+                    buttonPlay.setState(AzButton.BUTTON_STATE.STATE_PAUSE);
                     mp.pause();
                     break;
                 case STATE_PAUSE:
-                    buttonPlay.setState(PlayPauseView.BUTTON_STATE.STATE_PLAYING);
+                    buttonPlay.setState(AzButton.BUTTON_STATE.STATE_PLAYING);
                     mp.start();
                     break;
             }
@@ -266,7 +266,7 @@ public class MainFragment extends Fragment {
             mp.setDataSource(fileInputStream.getFD());
             fileInputStream.close();
             mp.setOnCompletionListener(mp -> {
-                buttonPlay.setState(PlayPauseView.BUTTON_STATE.STATE_COMPLETED);
+                buttonPlay.setState(AzButton.BUTTON_STATE.STATE_COMPLETED);
                 isFetched = false;
                 isFetching = false;
                 if (downloadingMediaFile != null) {
@@ -274,7 +274,7 @@ public class MainFragment extends Fragment {
                 }
             });
             mp.setOnPreparedListener(mp -> {
-                buttonPlay.setState(PlayPauseView.BUTTON_STATE.STATE_PLAYING);
+                buttonPlay.setState(AzButton.BUTTON_STATE.STATE_PLAYING);
                 mp.start();
             });
             mp.prepareAsync();
