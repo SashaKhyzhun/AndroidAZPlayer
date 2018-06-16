@@ -72,12 +72,12 @@ public class MainFragment extends Fragment {
                 return;
             }
             switch (buttonPlay.getState()) {
-                case STATE_PLAYING:
-                    buttonPlay.setState(AzButton.BUTTON_STATE.STATE_PAUSE);
+                case PLAYING:
+                    buttonPlay.setState(AzButton.PLAYER_STATE.PAUSE);
                     mp.pause();
                     break;
-                case STATE_PAUSE:
-                    buttonPlay.setState(AzButton.BUTTON_STATE.STATE_PLAYING);
+                case PAUSE:
+                    buttonPlay.setState(AzButton.PLAYER_STATE.PLAYING);
                     mp.start();
                     break;
             }
@@ -166,9 +166,9 @@ public class MainFragment extends Fragment {
     private File handleThread(final Chunk chunk, final String fullUrl) {
         int count = 0;
         int total = 0;
-        Log.i(TAG, "Started T" + chunk.getPos() + ".:" + total);
+//        Log.i(TAG, "Started T" + chunk.getPos() + ".:" + total);
         File result = null;
-        Log.i(TAG, "Starting T1.");
+//        Log.i(TAG, "Starting T1.");
         try {
             URL url = new URL(fullUrl);
             URLConnection urlConnection = url.openConnection();
@@ -179,8 +179,8 @@ public class MainFragment extends Fragment {
 
             int lengthOfFile = connection.getContentLength();
 
-            Log.d(TAG, connection.getHeaderField("Content-Range"));
-            Log.d(TAG, String.valueOf(lengthOfFile));
+//            Log.d(TAG, connection.getHeaderField("Content-Range"));
+//            Log.d(TAG, String.valueOf(lengthOfFile));
 
             final InputStream input = connection.getInputStream();
             String filename = chunk.getFilename();
@@ -208,7 +208,7 @@ public class MainFragment extends Fragment {
         } catch (Exception ignored) {
 
         }
-        Log.i(TAG, "Finished T" + chunk.getPos() + ".:" + total);
+//        Log.i(TAG, "Finished T" + chunk.getPos() + ".:" + total);
         return result;
     }
 
@@ -228,7 +228,7 @@ public class MainFragment extends Fragment {
 
                 OutputStream output = new FileOutputStream(downloadingMediaFile);
                 for (Chunk c : mChunks) {
-                    Log.d(TAG, c.getFullPath());
+//                    Log.d(TAG, c.getFullPath());
                     File file = new File(c.getFullPath());
                     int size = (int) file.length() - 1;
                     byte[] bytes = new byte[size];
@@ -244,7 +244,7 @@ public class MainFragment extends Fragment {
                 output.flush();
                 output.close();
 
-                Log.d(TAG, String.valueOf(downloadingMediaFile.length()));
+//                Log.d(TAG, String.valueOf(downloadingMediaFile.length()));
 
 
                 play(downloadingMediaFile);
@@ -256,17 +256,17 @@ public class MainFragment extends Fragment {
     }
 
     private void play(File mediaFile) {
-        Log.d(TAG, String.valueOf(mediaFile.getAbsolutePath()));
+//        Log.d(TAG, String.valueOf(mediaFile.getAbsolutePath()));
         try {
             FileInputStream fileInputStream = new FileInputStream(mediaFile);
-            Log.d(TAG, String.valueOf(fileInputStream.available()));
+//            Log.d(TAG, String.valueOf(fileInputStream.available()));
 
             mp.reset();
             mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mp.setDataSource(fileInputStream.getFD());
             fileInputStream.close();
             mp.setOnCompletionListener(mp -> {
-                buttonPlay.setState(AzButton.BUTTON_STATE.STATE_COMPLETED);
+                buttonPlay.setState(AzButton.PLAYER_STATE.COMPLETED);
                 isFetched = false;
                 isFetching = false;
                 if (downloadingMediaFile != null) {
@@ -274,14 +274,14 @@ public class MainFragment extends Fragment {
                 }
             });
             mp.setOnPreparedListener(mp -> {
-                buttonPlay.setState(AzButton.BUTTON_STATE.STATE_PLAYING);
+                buttonPlay.setState(AzButton.PLAYER_STATE.PLAYING);
                 mp.start();
             });
             mp.prepareAsync();
 
         } catch (IOException e) {
             e.printStackTrace();
-            Log.v(getString(R.string.app_name), e.getMessage());
+//            Log.v(getString(R.string.app_name), e.getMessage());
         } catch (Exception ee) {
             ee.printStackTrace();
         }

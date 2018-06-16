@@ -1,5 +1,6 @@
 package com.sashakhyzhun.androidazplayer.ui.custom;
 
+import android.app.Application;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,22 +15,26 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
-import android.view.VelocityTracker;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
-import android.view.animation.TranslateAnimation;
 import android.widget.LinearLayout;
 
+import static com.sashakhyzhun.androidazplayer.util.Constants.shitHappens;
 import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
 
-    private BUTTON_STATE mState = BUTTON_STATE.STATE_NORMAL;
+    private static final int DISPALY_Y_OFFSET = 250;
+    private static final int DISPALY_X_OFFSET = 150;
+
+    private PLAYER_STATE mState = PLAYER_STATE.NORMAL;
     private boolean isFetchingAnimRunning = false;
     private float START_ANGLE_POINT = 90;
 
@@ -53,15 +58,16 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     private RectF playerRectArch;
     private Rect playerRectAngle;
 
+    private int maxX = 0;
+    private int maxY = 0;
 
 
-
-    public enum BUTTON_STATE {
-        STATE_PLAYING,
-        STATE_PAUSE,
-        STATE_FETCHING,
-        STATE_NORMAL,
-        STATE_COMPLETED
+    public enum PLAYER_STATE {
+        PLAYING,
+        PAUSE,
+        FETCHING,
+        NORMAL,
+        COMPLETED
     }
 
     public AzButton(Context context) {
@@ -79,9 +85,22 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         init(context, attrs);
     }
 
-    //todo: check it
     private void init(Context context, AttributeSet attrs) {
-        gestureDetector = new GestureDetector(context, new SingleTapConfirm());
+
+        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+
+        Display display = null;
+        if (wm != null) {
+            display = wm.getDefaultDisplay();
+            Point displayPoint = new Point();
+            display.getSize(displayPoint);
+            maxX = displayPoint.x;
+            maxY = displayPoint.y;
+        }
+
+
+        //gestureListener = new GestureListener();
+        gestureDetector = new GestureDetector(context, new SingleTapConfirm(this));
 
         // onClicks
         setOnClickListener(this);
@@ -141,7 +160,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     }
 
-    @Override //todo: check it
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
@@ -156,9 +175,9 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         canvas.drawCircle(mCircleX, mCircleY, mRadius, playerButtonPaint);
 
         switch (getState()) {
-            case STATE_NORMAL:
-            case STATE_PAUSE:
-            case STATE_COMPLETED:
+            case NORMAL:
+            case PAUSE:
+            case COMPLETED:
 
                 int triangleWidth = (usableWidth / 2) - preferedPadding;
 
@@ -169,7 +188,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 Path trianglePath = getInsideTrianglePath(trianglePoint, triangleWidth);
                 canvas.drawPath(trianglePath, trianglePaint);
 
-                if (getState() == BUTTON_STATE.STATE_PAUSE) {
+                if (getState() == PLAYER_STATE.PAUSE) {
 
                     playerRectArch.left = preferedPadding / 2;
                     playerRectArch.top = preferedPadding / 2;
@@ -179,7 +198,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                     canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
                 }
                 break;
-            case STATE_PLAYING:
+            case PLAYING:
 
                 int width = (usableWidth / 3) - preferedPadding;
 
@@ -206,7 +225,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
 
                 break;
-            case STATE_FETCHING:
+            case FETCHING:
 
                 playerRectArch.left = preferedPadding / 2;
                 playerRectArch.top = preferedPadding / 2;
@@ -230,20 +249,20 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         return path;
     }
 
-    public BUTTON_STATE getState() {
+    public PLAYER_STATE getState() {
         return mState;
     }
 
-    public void setState(BUTTON_STATE state) {
+    public void setState(PLAYER_STATE state) {
         mState = state;
         switch (state) {
-            case STATE_FETCHING:
+            case FETCHING:
                 Log.d("AzButton", "state_fetching = true");
-            case STATE_PLAYING:
+            case PLAYING:
                 isFetchingAnimRunning = false;
                 startPlayingAnim();
                 break;
-            case STATE_COMPLETED:
+            case COMPLETED:
                 isFetchingAnimRunning = false;
                 angleArch = 120;
                 START_ANGLE_POINT = 90;
@@ -278,7 +297,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     }
 
     public void startFetching() {
-        setState(AzButton.BUTTON_STATE.STATE_FETCHING);
+        setState(PLAYER_STATE.FETCHING);
         if (!isFetchingAnimRunning) {
             isFetchingAnimRunning = !isFetchingAnimRunning;
             startFetchingAnim();
@@ -286,7 +305,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     }
 
     public void startPlayingAnim() {
-        if (getState() != BUTTON_STATE.STATE_PLAYING || mMediaPlayer == null) {
+        if (getState() != PLAYER_STATE.PLAYING || mMediaPlayer == null) {
             return;
         }
         Handler h = new Handler();
@@ -310,13 +329,98 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
      */
 
     @Override
-    public void onClick(View v) { Log.i("AzButton", "onClick"); }
+    public void onClick(View v) {
+        //Log.i("AzButton", "onClick");
+    }
 
     private class SingleTapConfirm extends SimpleOnGestureListener {
+
+        private static final int SWIPE_THRESHOLD = 1;
+        private static final int SWIPE_VELOCITY_THRESHOLD = 1;
+        private View playerView;
+
+        SingleTapConfirm(View playerView) {
+            this.playerView = playerView;
+        }
+
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
             return true;
         }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            super.onLongPress(e);
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            Log.i("SingleTapConfirm", "onScroll");
+            return super.onScroll(e1, e2, distanceX, distanceY);
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            try {
+                float diffX = e2.getX() - e1.getX();
+                float diffY = e2.getY() - e1.getY();
+
+//                if (Math.abs(diffX) > Math.abs(diffY)) {
+//                    if (diffX > 0) {
+//                        swipeToLeftUpperCorner(playerView);
+//                    } else {
+//                        swipeToRightUpperCorner(playerView);
+//                    }
+//                    return true;
+//                }
+//
+//                if (Math.abs(diffX) < Math.abs(diffY)) {
+//                    if (diffY > 0) {
+//                        swipeToRightDownCorner(playerView);
+//                    } else {
+//                        swipeToLeftDownCorner(playerView);
+//                    }
+//                    return true;
+//                }
+
+                // GOING TO THE RIGHT | UP
+                if (Math.abs(diffX) > 0 && Math.abs(diffY) > 0) {
+                    swipeToRightUpperCorner(playerView);
+                }
+                // GOING TO THE RIGHT | DOWN
+                if (Math.abs(diffX) > 0 && Math.abs(diffY) < 0) {
+                    swipeToRightDownCorner(playerView);
+                }
+                // GOING TO THE LEFT | UP
+                if (Math.abs(diffX) < 0 && Math.abs(diffY) > 0) {
+                    swipeToLeftUpperCorner(playerView);
+                }
+                // // GOING TO THE LEFT | DOWN
+                if (Math.abs(diffX) < 0 && Math.abs(diffY) < 0) {
+                    swipeToLeftDownCorner(playerView);
+                }
+                else {
+                    Log.i("onFling", "onFling | ELSE BLOCK");
+                }
+                Log.d("onFling", "e1.getX = " + e1.getX());
+                Log.d("onFling", "e2.getX = " + e2.getX());
+                Log.d("onFling", "e1.getY = " + e1.getY());
+                Log.d("onFling", "e2.getY = " + e2.getY());
+                Log.d("onFling", "diffX = " + diffX);
+                Log.d("onFling", "diffY = " + diffY);
+                Log.d("onFling", "abs(diffX) = " + Math.abs(diffX));
+                Log.d("onFling", "abs(diffY) = " + Math.abs(diffY));
+                Log.d("onFling", "abs(velocityX) = " + Math.abs(velocityX));
+                Log.d("onFling", "abs(velocityY) = " + Math.abs(velocityY));
+                Log.d("onFling", "*****************************");
+
+            } catch (Exception exception) {
+                exception.printStackTrace();
+                Log.e(Application.class.getSimpleName(), shitHappens);
+            }
+            return false;
+        }
+
     }
 
     public void setClickedListener(OnClickListener listener) {
@@ -330,36 +434,21 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     @Override
     public boolean onTouch(View view, MotionEvent event) {
 
-        VelocityTracker mVelocityTracker = VelocityTracker.obtain();
-
         if (gestureDetector.onTouchEvent(event)) {
+            Log.d("onTouch", "gestureDetector.onTouchEvent(event)");
             if (mListener != null) {
                 mListener.onClick(view);
             }
-            return true;
-        } else {
+            return false;
+        }
+
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     oldValueX = view.getX() - event.getRawX();
                     oldValueY = view.getY() - event.getRawY();
 
-                    mVelocityTracker.clear();
-                    mVelocityTracker.addMovement(event);
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    // finger (usually from the middle of the view)
-                    Log.d("ACTION_MOVE", "event.getRawX    = " + event.getRawX());
-                    Log.d("ACTION_MOVE", "event.getRawY    = " + event.getRawY());
-                    // X & Y of Player view (max left % max top)
-                    Log.d("ACTION_MOVE", "view.getX        = " + view.getX());
-                    Log.d("ACTION_MOVE", "view.getY        = " + view.getY());
-
-                    Log.d("ACTION_MOVE", "oldValueX        = " + oldValueX);
-                    Log.d("ACTION_MOVE", "oldValueY        = " + oldValueY);
-                    Log.d("ACTION_MOVE", "---------------------------------------");
-
-                    mVelocityTracker.addMovement(event);
-
                     if ((event.getRawY() + oldValueY) < getRootView().getY()
                             ||
                             (event.getRawY() + oldValueY) > (getRootView().getY()
@@ -375,18 +464,54 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                             .start();
                     break;
                 case MotionEvent.ACTION_UP:
-                    
-                    //TranslateAnimation animation = new TranslateAnimation(fromX, toX, fromY, toY);
-                    //animation.setDuration(0);
-                    //view.startAnimation(animation);
-
+                    Log.d("ACTION_UP", "DA");
                     break;
                 default:
                     break;
             }
-            return false;
-        }
+            return gestureDetector.onTouchEvent(event);
+
     }
+
+
+
+    public void swipeToRightUpperCorner(View playerView) {
+        Log.d("onFling", "swipeToRightUpperCorner");
+        playerView.animate()
+                .translationX(maxX / 2 - DISPALY_X_OFFSET)
+                .translationY(-maxY / 2 + DISPALY_Y_OFFSET)
+                .setDuration(400)
+                .start();
+    }
+
+    public void swipeToRightDownCorner(View playerView) {
+        Log.d("onFling", "swipeToRightDownCorner");
+//        playerView.animate()
+//                .translationX(0)
+//                .translationY(0)
+//                .setDuration(100)
+//                .start();
+    }
+
+    public void swipeToLeftUpperCorner(View playerView) {
+        Log.d("onFling", "swipeToLeftUpperCorner");
+//        playerView.animate()
+//                .translationX(0)
+//                .translationY(0)
+//                .setDuration(100)
+//                .start();
+    }
+
+    public void swipeToLeftDownCorner(View playerView){
+        Log.d("onFling", "swipeToLeftDownCorner");
+//        playerView.animate()
+//                .translationX(0)
+//                .translationY(0)
+//                .setDuration(100)
+//                .start();
+    }
+
+
 
 
 
