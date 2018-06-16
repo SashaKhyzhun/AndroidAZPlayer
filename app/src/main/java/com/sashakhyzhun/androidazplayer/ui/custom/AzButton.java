@@ -26,13 +26,15 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.LinearLayout;
 
+import javax.security.auth.login.LoginException;
+
 import static com.sashakhyzhun.androidazplayer.util.Constants.shitHappens;
 import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
 
-    private static final int DISPALY_Y_OFFSET = 250;
-    private static final int DISPALY_X_OFFSET = 150;
+    private static final int DISPLAY_Y_OFFSET = 250;
+    private static final int DISPLAY_X_OFFSET = 150;
 
     private PLAYER_STATE mState = PLAYER_STATE.NORMAL;
     private boolean isFetchingAnimRunning = false;
@@ -41,6 +43,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     private int angleArch;
     private float oldValueX = 0;
     private float oldValueY = 0;
+    private float oldViewX = 0;
+    private float oldViewY = 0;
 
     // size of the player
     private int preferedWidth = 0;
@@ -355,7 +359,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            Log.i("SingleTapConfirm", "onScroll");
             return super.onScroll(e1, e2, distanceX, distanceY);
         }
 
@@ -383,36 +386,36 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 //                    return true;
 //                }
 
-                // GOING TO THE RIGHT | UP
-                if (Math.abs(diffX) > 0 && Math.abs(diffY) > 0) {
-                    swipeToRightUpperCorner(playerView);
-                }
-                // GOING TO THE RIGHT | DOWN
-                if (Math.abs(diffX) > 0 && Math.abs(diffY) < 0) {
-                    swipeToRightDownCorner(playerView);
-                }
-                // GOING TO THE LEFT | UP
-                if (Math.abs(diffX) < 0 && Math.abs(diffY) > 0) {
-                    swipeToLeftUpperCorner(playerView);
-                }
-                // // GOING TO THE LEFT | DOWN
-                if (Math.abs(diffX) < 0 && Math.abs(diffY) < 0) {
-                    swipeToLeftDownCorner(playerView);
-                }
-                else {
-                    Log.i("onFling", "onFling | ELSE BLOCK");
-                }
-                Log.d("onFling", "e1.getX = " + e1.getX());
-                Log.d("onFling", "e2.getX = " + e2.getX());
-                Log.d("onFling", "e1.getY = " + e1.getY());
-                Log.d("onFling", "e2.getY = " + e2.getY());
-                Log.d("onFling", "diffX = " + diffX);
-                Log.d("onFling", "diffY = " + diffY);
-                Log.d("onFling", "abs(diffX) = " + Math.abs(diffX));
-                Log.d("onFling", "abs(diffY) = " + Math.abs(diffY));
-                Log.d("onFling", "abs(velocityX) = " + Math.abs(velocityX));
-                Log.d("onFling", "abs(velocityY) = " + Math.abs(velocityY));
-                Log.d("onFling", "*****************************");
+//                // GOING TO THE RIGHT | UP
+//                if (Math.abs(diffX) > 0 && Math.abs(diffY) > 0) {
+//                    swipeToRightUpperCorner(playerView);
+//                }
+//                // GOING TO THE RIGHT | DOWN
+//                if (Math.abs(diffX) > 0 && Math.abs(diffY) < 0) {
+//                    swipeToRightDownCorner(playerView);
+//                }
+//                // GOING TO THE LEFT | UP
+//                if (Math.abs(diffX) < 0 && Math.abs(diffY) > 0) {
+//                    swipeToLeftUpperCorner(playerView);
+//                }
+//                // // GOING TO THE LEFT | DOWN
+//                if (Math.abs(diffX) < 0 && Math.abs(diffY) < 0) {
+//                    swipeToLeftDownCorner(playerView);
+//                }
+//                else {
+//                    Log.i("onFling", "onFling | ELSE BLOCK");
+//                }
+//                Log.d("onFling", "e1.getX = " + e1.getX());
+//                Log.d("onFling", "e2.getX = " + e2.getX());
+//                Log.d("onFling", "e1.getY = " + e1.getY());
+//                Log.d("onFling", "e2.getY = " + e2.getY());
+//                Log.d("onFling", "diffX = " + diffX);
+//                Log.d("onFling", "diffY = " + diffY);
+//                Log.d("onFling", "abs(diffX) = " + Math.abs(diffX));
+//                Log.d("onFling", "abs(diffY) = " + Math.abs(diffY));
+//                Log.d("onFling", "abs(velocityX) = " + Math.abs(velocityX));
+//                Log.d("onFling", "abs(velocityY) = " + Math.abs(velocityY));
+//                Log.d("onFling", "*****************************");
 
             } catch (Exception exception) {
                 exception.printStackTrace();
@@ -431,66 +434,168 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         mMediaPlayer = mp;
     }
 
+//    @Override
+//    public boolean onTouch(View view, MotionEvent event) {
+//
+////        if (gestureDetector.onTouchEvent(event)) {
+////            Log.d("onTouch", "gestureDetector.onTouchEvent(event)");
+////            if (mListener != null) {
+////                mListener.onClick(view);
+////            }
+////            return false;
+////        }
+//
+//
+//        float oldX = event.getX();
+//        float oldY = event.getY();
+//
+//        switch (event.getAction()) {
+//            case MotionEvent.ACTION_DOWN:
+//                oldValueX = view.getX() - event.getRawX();
+//                oldValueY = view.getY() - event.getRawY();
+//                oldX = event.getX();
+//                oldY = event.getY();
+//                Log.d("ACTION_DOWN", "oldX = " + oldX);
+//                Log.d("ACTION_DOWN", "oldY = " + oldY);
+//                break;
+//            case MotionEvent.ACTION_MOVE:
+//                view.animate()
+//                        .x(event.getRawX() + oldValueX)
+//                        .y(event.getRawY() + oldValueY)
+//                        .setDuration(0)
+//                        .start();
+//                break;
+//            case MotionEvent.ACTION_UP:
+//                float newX = view.getX() - event.getRawX();
+//                float newY = view.getY() - event.getRawY();
+//                Log.d("ACTION_UP", "newX = " + newX);
+//                Log.d("ACTION_UP", "newY = " + newY);
+//
+////                Log.d("ActionUp", "old x = " + e1X);
+////                Log.d("ActionUp", "new X = " + event.getX());
+////                Log.d("ActionUp", "-------------------------------");
+////                Log.d("ActionUp", "old Y = " + e1Y);
+////                Log.d("ActionUp", "new Y = " + event.getY());
+//                float diffX = newX - oldX;
+//                float diffY = newY - oldY;
+////                Log.d("ActionUp", "-------------------------------");
+////                Log.d("ActionUp", "diff X = " + diffX);
+////                Log.d("ActionUp", "diff Y = " + diffY);
+//
+//
+//                break;
+//            default:
+//                break;
+//        }
+//
+//        return true;
+//    }
+
     @Override
     public boolean onTouch(View view, MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                oldValueX = view.getX() - event.getRawX();
+                oldValueY = view.getY() - event.getRawY();
+                oldViewX = view.getX();
+                oldViewY = view.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                view.animate()
+                        .x(event.getRawX() + oldValueX)
+                        .y(event.getRawY() + oldValueY)
+                        .setDuration(0)
+                        .start();
+                break;
+            case MotionEvent.ACTION_UP:
+                float lastX = view.getX();
+                float lastY = view.getY();
+                Log.d("ACTION_UP", "old x = " + oldViewX);
+                Log.d("ACTION_UP", "new x = " + lastX);
+                Log.d("ACTION_UP", "old y = " + oldViewY);
+                Log.d("ACTION_UP", "new y = " + lastY);
+                Log.d("ACTION_UP", "---------------------");
 
-        if (gestureDetector.onTouchEvent(event)) {
-            Log.d("onTouch", "gestureDetector.onTouchEvent(event)");
-            if (mListener != null) {
-                mListener.onClick(view);
-            }
-            return false;
+                Log.d("ACTION_UP", "abs X = " + (Math.abs(lastX - oldViewX)));
+                Log.d("ACTION_UP", "abs Y = " + (Math.abs(lastY - oldViewY)));
+
+
+                if (lastX > oldViewX && Math.abs(lastX - oldViewX) > 100) { // to right
+
+                    Log.i("actionUp", "движемся вправо");
+
+                    if (lastY > oldViewY) { // to top
+                        Log.i("actionUp", "и вниз");
+
+
+                    } else if (lastY < oldViewY) { // to bottom
+
+                        Log.i("actionUp", "и вверх");
+
+                    }
+
+                } else if (lastX < oldViewX && Math.abs(lastX - oldViewX) > 100) { // to left
+
+                    Log.i("actionUp", "движемся влево");
+
+                    if (lastY > oldViewY) { // to top
+
+                        Log.i("actionUp", "и вниз");
+
+                    } else if (lastY < oldViewY) { // to bottom
+
+                        Log.i("actionUp", "и вверх");
+
+                    }
+                }
+
+//                // GOING TO THE RIGHT
+//                if (Math.abs(oldViewX - lastX) > 200) {
+//                    // AND UP
+//                    if (Math.abs(oldViewY - lastY) > 200) {
+//                        swipeToRightUpperCorner(view);
+//                    }
+//                    // OR DOWN
+//                    else if (Math.abs(oldViewY - lastY) < 200) {
+//                        swipeToRightDownCorner(view);
+//                    }
+//                }
+//
+//                // GOING TO THE LEFT
+//                if (Math.abs(oldViewX - lastX) < 200) {
+//                    // AND UP
+//                    if (Math.abs(oldViewY - lastY) > 0) {
+//                        swipeToLeftUpperCorner(view);
+//                    }
+//                    // OR DOWN
+//                    else if (Math.abs(oldViewY - lastY) < 0) {
+//                        swipeToLeftDownCorner(view);
+//                    }
+//                }
+
+                break;
         }
 
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    oldValueX = view.getX() - event.getRawX();
-                    oldValueY = view.getY() - event.getRawY();
-
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    if ((event.getRawY() + oldValueY) < getRootView().getY()
-                            ||
-                            (event.getRawY() + oldValueY) > (getRootView().getY()
-                                                + getRootView().getHeight()
-                                                - view.getHeight()
-                                                - dimension(view.getContext(), 24))) {
-                        return false;
-                    }
-                    view.animate()
-                            .x(event.getRawX() + oldValueX)
-                            .y(event.getRawY() + oldValueY)
-                            .setDuration(0)
-                            .start();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    Log.d("ACTION_UP", "DA");
-                    break;
-                default:
-                    break;
-            }
-            return gestureDetector.onTouchEvent(event);
-
+        return true;
     }
-
 
 
     public void swipeToRightUpperCorner(View playerView) {
         Log.d("onFling", "swipeToRightUpperCorner");
         playerView.animate()
-                .translationX(maxX / 2 - DISPALY_X_OFFSET)
-                .translationY(-maxY / 2 + DISPALY_Y_OFFSET)
+                .translationX(maxX / 2 - DISPLAY_X_OFFSET)
+                .translationY(-maxY / 2 + DISPLAY_Y_OFFSET)
                 .setDuration(400)
                 .start();
     }
 
     public void swipeToRightDownCorner(View playerView) {
         Log.d("onFling", "swipeToRightDownCorner");
-//        playerView.animate()
-//                .translationX(0)
-//                .translationY(0)
-//                .setDuration(100)
-//                .start();
+        playerView.animate()
+                .translationX(maxX / 2 - DISPLAY_X_OFFSET)
+                .translationY(maxY / 2 + DISPLAY_Y_OFFSET)
+                .setDuration(100)
+                .start();
     }
 
     public void swipeToLeftUpperCorner(View playerView) {
