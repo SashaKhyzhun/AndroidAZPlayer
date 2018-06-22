@@ -1,8 +1,5 @@
 package com.sashakhyzhun.androidazplayer.util;
 
-import android.text.TextUtils;
-import android.util.Log;
-
 import com.sashakhyzhun.androidazplayer.data.model.Chunk;
 
 import java.io.BufferedInputStream;
@@ -11,8 +8,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXTINF;
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXT_X_ENDLIST;

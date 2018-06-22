@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -25,20 +24,11 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.LinearLayout;
 
-import java.text.DecimalFormat;
+import com.sashakhyzhun.androidazplayer.util.AnimationHelper;
 
 import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
-/**
- * This code is not the best solution ever that can handle any case.
- * I had requirements, I did related solution.
- * Something required a much more time for a better result (like animation smoothing).
- * Everything might be improved & polished for better performance or smoother animations.
- */
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
-
-    private static final int DISPLAY_Y_OFFSET = 250;
-    private static final int DISPLAY_X_OFFSET = 150;
 
     private PLAYER_STATE mState = PLAYER_STATE.NORMAL;
     private boolean isFetchingAnimRunning = false;
@@ -47,19 +37,18 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     private int angleArch;
     private float oldValueX = 0;
     private float oldValueY = 0;
-    private float oldViewX = 0;
-    private float oldViewY = 0;
+    private float oldX = 0;
+    private float oldY = 0;
+    
+    private int prefWidth = 0;
+    private int prefPadding = 0;
 
-    // size of the player
-    private int preferedWidth = 0;
-    private int _preferedWidthDP = 100;
-    private int preferedPadding = 0;
-
-    private Point trianglePoint;
-    private Paint trianglePaint;
     private GestureDetector gestureDetector;
+    private AnimationHelper animHelper;
     private OnClickListener mListener;
     private MediaPlayer mMediaPlayer;
+    private Point trianglePoint;
+    private Paint trianglePaint;
     private Paint fetchingCircleLineAround;
     private Paint pauseViewInsideRect;
     private Paint playerButtonPaint;
@@ -95,10 +84,9 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     }
 
     private void init(Context context, AttributeSet attrs) {
-
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-
         Display display = null;
+
         if (wm != null) {
             display = wm.getDefaultDisplay();
             Point displayPoint = new Point();
@@ -107,8 +95,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
             maxY = displayPoint.y;
         }
 
-
-        //gestureListener = new GestureListener();
+        animHelper = new AnimationHelper(maxX, maxY);
         gestureDetector = new GestureDetector(context, new SingleTapConfirm());
 
         // onClicks
@@ -116,12 +103,13 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         setOnTouchListener(this);
 
         // display sizes
-        preferedWidth = (int) dimension(context, _preferedWidthDP);
-        preferedPadding = (int) dimension(context, 4);
+        int prefWidthDP = 100;
+        prefWidth = (int) dimension(context, prefWidthDP);
+        prefPadding = (int) dimension(context, 4);
 
         // set up the layout params
-        setLayoutParams(new LinearLayout.LayoutParams(_preferedWidthDP, _preferedWidthDP));
-        setPadding(preferedPadding, preferedPadding, preferedPadding, preferedPadding);
+        setLayoutParams(new LinearLayout.LayoutParams(prefWidthDP, prefWidthDP));
+        setPadding(prefPadding, prefPadding, prefPadding, prefPadding);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) { setElevation(10F); }
 
         // create the Player Main view
@@ -170,11 +158,12 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     }
 
     @Override
+    @SuppressWarnings("SuspiciousNameCombination")
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        int usableWidth = preferedWidth;
-        int usableHeight = preferedWidth;
+        int usableWidth = prefWidth;
+        int usableHeight = prefWidth;
 
         // make it circle
         int mRadius = Math.min(usableWidth, usableHeight) / 2;
@@ -187,59 +176,54 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
             case NORMAL:
             case PAUSE:
             case COMPLETED:
-
-                int triangleWidth = (usableWidth / 2) - preferedPadding;
-
-                // triangle sizes
-                trianglePoint.x = mCircleX - (triangleWidth / 2) + preferedPadding;
+                int triangleWidth = (usableWidth / 2) - prefPadding;
+                trianglePoint.x = mCircleX - (triangleWidth / 2) + prefPadding;
                 trianglePoint.y = mCircleY - (triangleWidth / 2);
 
                 Path trianglePath = getInsideTrianglePath(trianglePoint, triangleWidth);
                 canvas.drawPath(trianglePath, trianglePaint);
 
                 if (getState() == PLAYER_STATE.PAUSE) {
-
-                    playerRectArch.left = preferedPadding / 2;
-                    playerRectArch.top = preferedPadding / 2;
-                    playerRectArch.right = (preferedWidth) - preferedPadding / 2;
-                    playerRectArch.bottom = preferedWidth - preferedPadding / 2;
-
+                    playerRectArch.left = prefPadding / 2;
+                    playerRectArch.top = prefPadding / 2;
+                    playerRectArch.right = (prefWidth) - prefPadding / 2;
+                    playerRectArch.bottom = prefWidth - prefPadding / 2;
                     canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
                 }
                 break;
             case PLAYING:
 
-                int width = (usableWidth / 3) - preferedPadding;
+                int width = (usableWidth / 3) - prefPadding;
 
                 int x = mCircleX - width;
                 int y = mCircleY - width;
 
                 playerRectAngle.top = y;
-                playerRectAngle.left = x + (preferedPadding / 4);
-                playerRectAngle.right = mCircleX - (preferedPadding / 2);
+                playerRectAngle.left = x + (prefPadding / 4);
+                playerRectAngle.right = mCircleX - (prefPadding / 2);
                 playerRectAngle.bottom = mCircleY + width;
                 canvas.drawRect(playerRectAngle, pauseViewInsideRect);
 
                 playerRectAngle.top = y;
-                playerRectAngle.left = mCircleX + (preferedPadding / 2);
-                playerRectAngle.right = mCircleX + (mCircleX - x) - (preferedPadding / 4);
+                playerRectAngle.left = mCircleX + (prefPadding / 2);
+                playerRectAngle.right = mCircleX + (mCircleX - x) - (prefPadding / 4);
                 playerRectAngle.bottom = mCircleY + width;
                 canvas.drawRect(playerRectAngle, pauseViewInsideRect);
 
-                playerRectArch.left = preferedPadding / 2;
-                playerRectArch.top = preferedPadding / 2;
-                playerRectArch.right = preferedWidth - preferedPadding / 2;
-                playerRectArch.bottom = preferedWidth - preferedPadding / 2;
+                playerRectArch.left = prefPadding / 2;
+                playerRectArch.top = prefPadding / 2;
+                playerRectArch.right = prefWidth - prefPadding / 2;
+                playerRectArch.bottom = prefWidth - prefPadding / 2;
 
                 canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
 
                 break;
             case FETCHING:
 
-                playerRectArch.left = preferedPadding / 2;
-                playerRectArch.top = preferedPadding / 2;
-                playerRectArch.right = preferedWidth - preferedPadding / 2;
-                playerRectArch.bottom = preferedWidth - preferedPadding / 2;
+                playerRectArch.left = prefPadding / 2;
+                playerRectArch.top = prefPadding / 2;
+                playerRectArch.right = prefWidth - prefPadding / 2;
+                playerRectArch.bottom = prefWidth - prefPadding / 2;
 
                 canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
                 break;
@@ -266,7 +250,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         mState = state;
         switch (state) {
             case FETCHING:
-                Log.d("AzButton", "state_fetching = true");
+                break;
             case PLAYING:
                 isFetchingAnimRunning = false;
                 startPlayingAnim();
@@ -280,8 +264,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 isFetchingAnimRunning = false;
              break;
         }
-        //If you want to re draw your view from UI Thread you can call invalidate() method.
-        //If you want to re draw your view from Non UI Thread you can call postInvalidate() method.
         invalidate();
     }
 
@@ -319,12 +301,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         }
         Handler h = new Handler();
         h.postDelayed(() -> {
-
             angleArch = (mMediaPlayer.getCurrentPosition() * 360) / mMediaPlayer.getDuration();
-            Log.d("Duration A", String.valueOf(mMediaPlayer.getDuration()));
-            Log.d("Duration C", String.valueOf(mMediaPlayer.getCurrentPosition()));
-            Log.d("Duration", String.valueOf(angleArch));
-
             START_ANGLE_POINT = 0;
             invalidate();
             startPlayingAnim();
@@ -332,15 +309,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     }
 
-
-    /**
-     * listeners
-     */
-
     @Override
-    public void onClick(View v) {
-        //Log.i("AzButton", "onClick");
-    }
+    public void onClick(View v) {}
 
     private class SingleTapConfirm extends SimpleOnGestureListener {
         @Override
@@ -359,12 +329,17 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     @Override
     public boolean onTouch(View view, MotionEvent event) {
+        if (gestureDetector.onTouchEvent(event)) {
+            if (mListener != null) { mListener.onClick(view); }
+            return false;
+        }
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 oldValueX = view.getX() - event.getRawX();
                 oldValueY = view.getY() - event.getRawY();
-                oldViewX = view.getX();
-                oldViewY = view.getY();
+                oldX = view.getX();
+                oldY = view.getY();
                 timerStart = System.currentTimeMillis();
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -375,24 +350,37 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                         .start();
                 break;
             case MotionEvent.ACTION_UP:
-                float lastX = view.getX();
-                float lastY = view.getY();
+                float newX = view.getX();
+                float newY = view.getY();
 
                 long timerEnd = System.currentTimeMillis();
-                double distance = Math.sqrt((lastX-oldViewX) * (lastX-oldViewX) + (lastY-oldViewY) * (lastY-oldViewY));
+                double distance = Math.sqrt((newX- oldX) * (newX- oldX) + (newY- oldY) * (newY- oldY));
                 double velocity = (distance / (timerEnd - timerStart));
+                float offsetX = Math.abs(newX - oldX);
+                float offsetY = Math.abs(newY - oldY);
 
-                if (lastX > oldViewX && Math.abs(lastX - oldViewX) > 300) { // to right
-                    if (lastY > oldViewY) { // and top
-                        swipeToRightDownCorner(view, velocity);
-                    } else if (lastY < oldViewY) { // and bottom
-                        swipeToRightUpperCorner(view, velocity);
+                if (newX > oldX && offsetX > 200) { // right
+                    if (newY < oldY && offsetY > 350) { // and top
+                        animHelper.swipeToRightUpperCorner(view, velocity);
+                        break;
+                    } else if (newY < oldY && offsetY < 350) { // and bot
+                        animHelper.swipeToRightDownCorner(view, velocity);
+                        break;
+                    } else {
+                        animHelper.swipeToHorizontalEdge(view, velocity, true); // just right
+                        break;
                     }
-                } else if (lastX < oldViewX && Math.abs(lastX - oldViewX) > 300) { // to left
-                    if (lastY > oldViewY) { // and  top
-                        swipeToLeftDownCorner(view, velocity);
-                    } else if (lastY < oldViewY) { // and  bottom
-                        swipeToLeftUpperCorner(view, velocity);
+
+                } else if (newX < oldX && offsetX > 200) { // left
+                    if (newY < oldY && offsetY > 350) { // and top
+                        animHelper.swipeToLeftUpperCorner(view, velocity);
+                        break;
+                    } else if (newY < oldY && offsetY < 350) { // and bot
+                        animHelper.swipeToLeftDownCorner(view, velocity);
+                        break;
+                    } else {
+                        animHelper.swipeToHorizontalEdge(view, velocity, false);  // just left
+                        break;
                     }
                 }
 
@@ -402,47 +390,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         return true;
     }
 
-    private static long convertVelocity(double velocity) {
-        DecimalFormat df = new DecimalFormat("####0.00");
-        long speedLong = (long) velocity;
-        return ((10 - speedLong) * 100);
-    }
-
-    public void swipeToRightUpperCorner(View playerView, double velocity) {
-        Log.d("onFling", "swipeToRightUpperCorner");
-        playerView.animate()
-                .translationX(maxX / 2 - DISPLAY_X_OFFSET)
-                .translationY(-maxY / 2 + DISPLAY_Y_OFFSET)
-                .setDuration(convertVelocity(velocity))
-                .start();
-    }
-
-    public void swipeToRightDownCorner(View playerView, double velocity) {
-        Log.d("onFling", "swipeToRightDownCorner");
-        playerView.animate()
-                .translationX(maxX / 2 - DISPLAY_X_OFFSET)
-                .translationY(maxY / 2 - DISPLAY_Y_OFFSET)
-                .setDuration(convertVelocity(velocity))
-                .start();
-    }
-
-    public void swipeToLeftUpperCorner(View playerView, double velocity) {
-        Log.d("onFling", "swipeToLeftUpperCorner");
-        playerView.animate()
-                .translationX(-maxX / 2 + DISPLAY_X_OFFSET)
-                .translationY(-maxY / 2 + DISPLAY_Y_OFFSET)
-                .setDuration(convertVelocity(velocity))
-                .start();
-    }
-
-    public void swipeToLeftDownCorner(View playerView, double velocity) {
-        Log.d("onFling", "swipeToLeftDownCorner");
-        playerView.animate()
-                .translationX(-maxX / 2 + DISPLAY_X_OFFSET)
-                .translationY(maxY / 2 - DISPLAY_Y_OFFSET)
-                .setDuration(convertVelocity(velocity))
-                .start();
-    }
 
 
 

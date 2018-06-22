@@ -7,7 +7,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +32,7 @@ import java.util.Map;
 
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXTM3U;
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXT_X_MEDIA;
+import static com.sashakhyzhun.androidazplayer.util.Constants.FILENAME_PREF;
 import static com.sashakhyzhun.androidazplayer.util.Constants.MP3;
 import static com.sashakhyzhun.androidazplayer.util.Constants.TYPE_AUDIO;
 import static com.sashakhyzhun.androidazplayer.util.Constants.URL_BASE;
@@ -40,7 +40,6 @@ import static com.sashakhyzhun.androidazplayer.util.Constants.URL_FILE;
 
 public class MainFragment extends Fragment {
 
-    private static final String TAG = MainFragment.class.getSimpleName();
 
     private boolean isFetching = false;
     private boolean isFetched = false;
@@ -120,12 +119,10 @@ public class MainFragment extends Fragment {
 
 
                 for (int i = 0; i < mChunks.size(); i = i + 2) {
-                    mChunks.get(i).setFilename("filename_" + i + MP3);
-                    mChunks.get(i).setPos(i);
+                    mChunks.get(i).setFilename(FILENAME_PREF + i + MP3);
                     Chunk chunk = null;
                     if (mChunks.size() - 1 > i + 1) {
-                        mChunks.get(i + 1).setFilename("filename_" + (i + 1) + MP3);
-                        mChunks.get(i + 1).setPos(i + 1);
+                        mChunks.get(i + 1).setFilename(FILENAME_PREF + (i + 1) + MP3);
                         chunk = mChunks.get(i + 1);
                     }
                     downloadAudio(mChunks.get(i), chunk);
@@ -174,10 +171,6 @@ public class MainFragment extends Fragment {
             HttpURLConnection connection = (HttpURLConnection) urlConnection;
             connection.setRequestMethod("GET");
             connection.connect();
-
-            int lengthOfFile = connection.getContentLength();
-
-
 
             final InputStream input = connection.getInputStream();
             String filename = chunk.getFilename();

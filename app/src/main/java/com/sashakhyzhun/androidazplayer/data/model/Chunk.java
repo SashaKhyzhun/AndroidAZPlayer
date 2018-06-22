@@ -7,7 +7,6 @@ public class Chunk {
 
     private int offset;
     private int length;
-    private int pos;
 
     private String name;
     private String filename;
@@ -26,10 +25,6 @@ public class Chunk {
 
     public void setLength(int length) {
         this.length = length;
-    }
-
-    public void setPos(int pos) {
-        this.pos = pos;
     }
 
     public void setName(String name) {
@@ -52,9 +47,6 @@ public class Chunk {
     /**
      * Getters
      */
-    public int getPos() {
-        return pos;
-    }
 
     public int getOffset() {
         return offset;
