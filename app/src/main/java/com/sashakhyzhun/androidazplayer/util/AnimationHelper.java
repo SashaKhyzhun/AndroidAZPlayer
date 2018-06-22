@@ -1,10 +1,7 @@
 package com.sashakhyzhun.androidazplayer.util;
 
-import android.util.Log;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
-
-import java.text.DecimalFormat;
 
 public class AnimationHelper {
 

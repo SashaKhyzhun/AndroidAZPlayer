@@ -39,7 +39,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     private float oldValueY = 0;
     private float oldX = 0;
     private float oldY = 0;
-    
+
     private int prefWidth = 0;
     private int prefPadding = 0;
 
@@ -98,36 +98,31 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         animHelper = new AnimationHelper(maxX, maxY);
         gestureDetector = new GestureDetector(context, new SingleTapConfirm());
 
-        // onClicks
         setOnClickListener(this);
         setOnTouchListener(this);
 
-        // display sizes
         int prefWidthDP = 100;
         prefWidth = (int) dimension(context, prefWidthDP);
         prefPadding = (int) dimension(context, 4);
 
-        // set up the layout params
         setLayoutParams(new LinearLayout.LayoutParams(prefWidthDP, prefWidthDP));
         setPadding(prefPadding, prefPadding, prefPadding, prefPadding);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) { setElevation(10F); }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setElevation(10F);
+        }
 
-        // create the Player Main view
         playerButtonPaint = new Paint();
         playerButtonPaint.setAntiAlias(true);
         playerButtonPaint.setColor(Color.BLACK);
 
-        // create the TRIANGLE inside the player
         trianglePaint = new Paint();
         trianglePaint.setColor(Color.WHITE);
         trianglePaint.setStyle(Paint.Style.FILL);
         trianglePoint = new Point();
 
-        // create the PAUSE inside the player
         pauseViewInsideRect = new Paint();
         pauseViewInsideRect.setColor(Color.GREEN);
 
-        // create the ROTATE ANIMATION as it is
         RotateAnimation rotateAnim = new RotateAnimation(
                 0,
                 360,
@@ -141,35 +136,27 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         rotateAnim.setRepeatMode(Animation.RESTART);
         rotateAnim.setInterpolator(new LinearInterpolator());
 
-        // create the FETCHING paint around the player like 'loading'
         fetchingCircleLineAround = new Paint();
         fetchingCircleLineAround.setAntiAlias(true);
         fetchingCircleLineAround.setStyle(Paint.Style.STROKE);
         fetchingCircleLineAround.setStrokeWidth(dimension(context, 2));
         fetchingCircleLineAround.setColor(Color.YELLOW);
 
-        // size 228x228 4example
         playerRectArch = new RectF(0, 0, 0, 0);
         playerRectAngle = new Rect(0, 0, 0, 0);
-
-        // Initial Angle (optional, it can be zero)
         angleArch = 120;
-
     }
 
     @Override
     @SuppressWarnings("SuspiciousNameCombination")
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         int usableWidth = prefWidth;
         int usableHeight = prefWidth;
 
-        // make it circle
         int mRadius = Math.min(usableWidth, usableHeight) / 2;
         int mCircleX = (usableWidth / 2);
         int mCircleY = (usableHeight / 2);
-
         canvas.drawCircle(mCircleX, mCircleY, mRadius, playerButtonPaint);
 
         switch (getState()) {
@@ -192,9 +179,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 }
                 break;
             case PLAYING:
-
                 int width = (usableWidth / 3) - prefPadding;
-
                 int x = mCircleX - width;
                 int y = mCircleY - width;
 
@@ -214,17 +199,13 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 playerRectArch.top = prefPadding / 2;
                 playerRectArch.right = prefWidth - prefPadding / 2;
                 playerRectArch.bottom = prefWidth - prefPadding / 2;
-
                 canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
-
                 break;
             case FETCHING:
-
                 playerRectArch.left = prefPadding / 2;
                 playerRectArch.top = prefPadding / 2;
                 playerRectArch.right = prefWidth - prefPadding / 2;
                 playerRectArch.bottom = prefWidth - prefPadding / 2;
-
                 canvas.drawArc(playerRectArch, START_ANGLE_POINT, angleArch, false, fetchingCircleLineAround);
                 break;
         }
@@ -262,7 +243,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 break;
             default:
                 isFetchingAnimRunning = false;
-             break;
+                break;
         }
         invalidate();
     }
@@ -310,7 +291,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     }
 
     @Override
-    public void onClick(View v) {}
+    public void onClick(View v) {
+    }
 
     private class SingleTapConfirm extends SimpleOnGestureListener {
         @Override
@@ -330,7 +312,9 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     @Override
     public boolean onTouch(View view, MotionEvent event) {
         if (gestureDetector.onTouchEvent(event)) {
-            if (mListener != null) { mListener.onClick(view); }
+            if (mListener != null) {
+                mListener.onClick(view);
+            }
             return false;
         }
 
@@ -354,107 +338,55 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 float newY = view.getY();
 
                 long timerEnd = System.currentTimeMillis();
-                double distance = Math.sqrt((newX- oldX) * (newX- oldX) + (newY- oldY) * (newY- oldY));
+                double distance = Math.sqrt((newX - oldX) * (newX - oldX) + (newY - oldY) * (newY - oldY));
                 double velocity = (distance / (timerEnd - timerStart));
                 boolean offsetX = Math.abs(newX - oldX) > 200;
                 boolean offsetY = Math.abs(newY - oldY) > 350;
 
                 if (newX > oldX && offsetX) {
-                    // to right
                     if (newY < oldY && offsetY) {
-                        // and top
                         animHelper.swipeToRightUpperCorner(view, velocity);
-                        break;
                     } else if (newY > oldY && offsetY) {
-                        // and bot
                         animHelper.swipeToRightDownCorner(view, velocity);
-                        break;
                     } else {
-                        // just to right
                         animHelper.swipeToHorizontalEdge(view, velocity, true);
-                        break;
                     }
+                    break;
                 } else if (newX < oldX && offsetX) {
-                    // to left
                     if (newY < oldY && offsetY) {
-                        // and top
                         animHelper.swipeToLeftUpperCorner(view, velocity);
-                        break;
                     } else if (newY > oldY && offsetY) {
-                        // and bot
                         animHelper.swipeToLeftDownCorner(view, velocity);
-                        break;
                     } else {
-                        // just to left
                         animHelper.swipeToHorizontalEdge(view, velocity, false);
-                        break;
                     }
+                    break;
                 } else if (newY < oldY && offsetY) {
-                    // to top
                     if (newX > oldX && offsetX) {
-                        // and right
                         animHelper.swipeToRightUpperCorner(view, velocity);
-                        break;
                     } else if (newX < oldX && offsetX) {
-                        // and left
                         animHelper.swipeToLeftUpperCorner(view, velocity);
-                        break;
                     } else {
-                        // just to top
                         animHelper.swipeToVerticalEdge(view, velocity, true);
-                        break;
                     }
+                    break;
                 } else if (newY > oldY && offsetY) {
-                    // to bot
                     if (newX > oldX && offsetX) {
-                        // and right
                         animHelper.swipeToRightDownCorner(view, velocity);
-                        break;
                     } else if (newX < oldX && offsetX) {
-                        // and left
                         animHelper.swipeToLeftDownCorner(view, velocity);
-                        break;
                     } else {
-                        // just to bot
                         animHelper.swipeToVerticalEdge(view, velocity, false);
-                        break;
                     }
+                    break;
                 }
 
-//                if (newX > oldX && offsetX) { // right
-//                    if (newY < oldY && offsetY) { // and top
-//                        animHelper.swipeToRightUpperCorner(view, velocity);
-//                        break;
-//                    } else if (newY < oldY && offsetY) { // and bot
-//                        animHelper.swipeToRightDownCorner(view, velocity);
-//                        break;
-//                    } else {
-//                        animHelper.swipeToHorizontalEdge(view, velocity, true); // just right
-//                        break;
-//                    }
-//
-//                } else if (newX < oldX && offsetX) { // left
-//                    if (newY < oldY && offsetY) { // and top
-//                        animHelper.swipeToLeftUpperCorner(view, velocity);
-//                        break;
-//                    } else if (newY < oldY && offsetY) { // and bot
-//                        animHelper.swipeToLeftDownCorner(view, velocity);
-//                        break;
-//                    } else {
-//                        animHelper.swipeToHorizontalEdge(view, velocity, false);  // just left
-//                        break;
-//                    }
-//                }
 
                 break;
         }
 
         return true;
     }
-
-
-
-
 
 
 }

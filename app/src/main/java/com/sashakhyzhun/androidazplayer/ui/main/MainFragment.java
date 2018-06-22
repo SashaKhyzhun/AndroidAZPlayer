@@ -40,7 +40,6 @@ import static com.sashakhyzhun.androidazplayer.util.Constants.URL_FILE;
 
 public class MainFragment extends Fragment {
 
-
     private boolean isFetching = false;
     private boolean isFetched = false;
     private int nextChunkArrive = 0;
@@ -64,7 +63,7 @@ public class MainFragment extends Fragment {
         buttonPlay = (AzButton) view.findViewById(R.id.playBtn);
         buttonPlay.setMediaPlayer(mp);
         buttonPlay.setClickedListener(v -> {
-             if (!isFetched && !isFetching) {
+            if (!isFetched && !isFetching) {
                 isFetching = true;
                 buttonPlay.startFetching();
                 new MyFetchAsync().execute();
@@ -144,7 +143,6 @@ public class MainFragment extends Fragment {
             }
         }
     }
-
 
 
     private void downloadAudio(final Chunk chunkFirst, final Chunk chunkSecond) {
