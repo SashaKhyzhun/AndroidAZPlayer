@@ -2,7 +2,7 @@ package com.sashakhyzhun.androidazplayer.util;
 
 public class Constants {
 
-    public static final String shitHappens = "¯\\_(ツ)_/¯";
+    public static final String idk = "¯\\_(ツ)_/¯";
 
 
     public static final String URL_STREAM = "http://pubcache1.arkiva.de/test/hls_index.m3u8";

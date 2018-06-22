@@ -56,11 +56,6 @@ public class HlsHelper {
         connection.setRequestMethod("GET");
         connection.connect();
 
-//        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-//            Log.d(TAG, "Server returned HTTP " + connection.getResponseCode()
-//                    + " " + connection.getResponseMessage());
-//        }
-
         InputStream input = new BufferedInputStream(url.openStream());
         StringBuilder sb = new StringBuilder();
         byte data[] = new byte[1024];

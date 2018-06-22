@@ -1,6 +1,5 @@
 package com.sashakhyzhun.androidazplayer.ui.custom;
 
-import android.app.Application;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -26,11 +25,16 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.LinearLayout;
 
-import javax.security.auth.login.LoginException;
+import java.text.DecimalFormat;
 
-import static com.sashakhyzhun.androidazplayer.util.Constants.shitHappens;
 import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
+/**
+ * This code is not the best solution ever that can handle any case.
+ * I had requirements, I did related solution.
+ * Something required a much more time for a better result (like animation smoothing).
+ * Everything might be improved & polished for better performance or smoother animations.
+ */
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
 
     private static final int DISPLAY_Y_OFFSET = 250;
@@ -64,6 +68,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     private int maxX = 0;
     private int maxY = 0;
+    private long timerStart = 0;
 
 
     public enum PLAYER_STATE {
@@ -104,7 +109,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
 
         //gestureListener = new GestureListener();
-        gestureDetector = new GestureDetector(context, new SingleTapConfirm(this));
+        gestureDetector = new GestureDetector(context, new SingleTapConfirm());
 
         // onClicks
         setOnClickListener(this);
@@ -338,92 +343,10 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
     }
 
     private class SingleTapConfirm extends SimpleOnGestureListener {
-
-        private static final int SWIPE_THRESHOLD = 1;
-        private static final int SWIPE_VELOCITY_THRESHOLD = 1;
-        private View playerView;
-
-        SingleTapConfirm(View playerView) {
-            this.playerView = playerView;
-        }
-
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
             return true;
         }
-
-        @Override
-        public void onLongPress(MotionEvent e) {
-            super.onLongPress(e);
-        }
-
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            return super.onScroll(e1, e2, distanceX, distanceY);
-        }
-
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            try {
-                float diffX = e2.getX() - e1.getX();
-                float diffY = e2.getY() - e1.getY();
-
-//                if (Math.abs(diffX) > Math.abs(diffY)) {
-//                    if (diffX > 0) {
-//                        swipeToLeftUpperCorner(playerView);
-//                    } else {
-//                        swipeToRightUpperCorner(playerView);
-//                    }
-//                    return true;
-//                }
-//
-//                if (Math.abs(diffX) < Math.abs(diffY)) {
-//                    if (diffY > 0) {
-//                        swipeToRightDownCorner(playerView);
-//                    } else {
-//                        swipeToLeftDownCorner(playerView);
-//                    }
-//                    return true;
-//                }
-
-//                // GOING TO THE RIGHT | UP
-//                if (Math.abs(diffX) > 0 && Math.abs(diffY) > 0) {
-//                    swipeToRightUpperCorner(playerView);
-//                }
-//                // GOING TO THE RIGHT | DOWN
-//                if (Math.abs(diffX) > 0 && Math.abs(diffY) < 0) {
-//                    swipeToRightDownCorner(playerView);
-//                }
-//                // GOING TO THE LEFT | UP
-//                if (Math.abs(diffX) < 0 && Math.abs(diffY) > 0) {
-//                    swipeToLeftUpperCorner(playerView);
-//                }
-//                // // GOING TO THE LEFT | DOWN
-//                if (Math.abs(diffX) < 0 && Math.abs(diffY) < 0) {
-//                    swipeToLeftDownCorner(playerView);
-//                }
-//                else {
-//                    Log.i("onFling", "onFling | ELSE BLOCK");
-//                }
-//                Log.d("onFling", "e1.getX = " + e1.getX());
-//                Log.d("onFling", "e2.getX = " + e2.getX());
-//                Log.d("onFling", "e1.getY = " + e1.getY());
-//                Log.d("onFling", "e2.getY = " + e2.getY());
-//                Log.d("onFling", "diffX = " + diffX);
-//                Log.d("onFling", "diffY = " + diffY);
-//                Log.d("onFling", "abs(diffX) = " + Math.abs(diffX));
-//                Log.d("onFling", "abs(diffY) = " + Math.abs(diffY));
-//                Log.d("onFling", "abs(velocityX) = " + Math.abs(velocityX));
-//                Log.d("onFling", "abs(velocityY) = " + Math.abs(velocityY));
-//                Log.d("onFling", "*****************************");
-
-            } catch (Exception exception) {
-                exception.printStackTrace();
-                Log.e(Application.class.getSimpleName(), shitHappens);
-            }
-            return false;
-        }
-
     }
 
     public void setClickedListener(OnClickListener listener) {
@@ -434,63 +357,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         mMediaPlayer = mp;
     }
 
-//    @Override
-//    public boolean onTouch(View view, MotionEvent event) {
-//
-////        if (gestureDetector.onTouchEvent(event)) {
-////            Log.d("onTouch", "gestureDetector.onTouchEvent(event)");
-////            if (mListener != null) {
-////                mListener.onClick(view);
-////            }
-////            return false;
-////        }
-//
-//
-//        float oldX = event.getX();
-//        float oldY = event.getY();
-//
-//        switch (event.getAction()) {
-//            case MotionEvent.ACTION_DOWN:
-//                oldValueX = view.getX() - event.getRawX();
-//                oldValueY = view.getY() - event.getRawY();
-//                oldX = event.getX();
-//                oldY = event.getY();
-//                Log.d("ACTION_DOWN", "oldX = " + oldX);
-//                Log.d("ACTION_DOWN", "oldY = " + oldY);
-//                break;
-//            case MotionEvent.ACTION_MOVE:
-//                view.animate()
-//                        .x(event.getRawX() + oldValueX)
-//                        .y(event.getRawY() + oldValueY)
-//                        .setDuration(0)
-//                        .start();
-//                break;
-//            case MotionEvent.ACTION_UP:
-//                float newX = view.getX() - event.getRawX();
-//                float newY = view.getY() - event.getRawY();
-//                Log.d("ACTION_UP", "newX = " + newX);
-//                Log.d("ACTION_UP", "newY = " + newY);
-//
-////                Log.d("ActionUp", "old x = " + e1X);
-////                Log.d("ActionUp", "new X = " + event.getX());
-////                Log.d("ActionUp", "-------------------------------");
-////                Log.d("ActionUp", "old Y = " + e1Y);
-////                Log.d("ActionUp", "new Y = " + event.getY());
-//                float diffX = newX - oldX;
-//                float diffY = newY - oldY;
-////                Log.d("ActionUp", "-------------------------------");
-////                Log.d("ActionUp", "diff X = " + diffX);
-////                Log.d("ActionUp", "diff Y = " + diffY);
-//
-//
-//                break;
-//            default:
-//                break;
-//        }
-//
-//        return true;
-//    }
-
     @Override
     public boolean onTouch(View view, MotionEvent event) {
         switch (event.getAction()) {
@@ -499,6 +365,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 oldValueY = view.getY() - event.getRawY();
                 oldViewX = view.getX();
                 oldViewY = view.getY();
+                timerStart = System.currentTimeMillis();
                 break;
             case MotionEvent.ACTION_MOVE:
                 view.animate()
@@ -510,68 +377,24 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
             case MotionEvent.ACTION_UP:
                 float lastX = view.getX();
                 float lastY = view.getY();
-                Log.d("ACTION_UP", "old x = " + oldViewX);
-                Log.d("ACTION_UP", "new x = " + lastX);
-                Log.d("ACTION_UP", "old y = " + oldViewY);
-                Log.d("ACTION_UP", "new y = " + lastY);
-                Log.d("ACTION_UP", "---------------------");
 
-                Log.d("ACTION_UP", "abs X = " + (Math.abs(lastX - oldViewX)));
-                Log.d("ACTION_UP", "abs Y = " + (Math.abs(lastY - oldViewY)));
+                long timerEnd = System.currentTimeMillis();
+                double distance = Math.sqrt((lastX-oldViewX) * (lastX-oldViewX) + (lastY-oldViewY) * (lastY-oldViewY));
+                double velocity = (distance / (timerEnd - timerStart));
 
-
-                if (lastX > oldViewX && Math.abs(lastX - oldViewX) > 100) { // to right
-
-                    Log.i("actionUp", "движемся вправо");
-
-                    if (lastY > oldViewY) { // to top
-                        Log.i("actionUp", "и вниз");
-
-
-                    } else if (lastY < oldViewY) { // to bottom
-
-                        Log.i("actionUp", "и вверх");
-
+                if (lastX > oldViewX && Math.abs(lastX - oldViewX) > 300) { // to right
+                    if (lastY > oldViewY) { // and top
+                        swipeToRightDownCorner(view, velocity);
+                    } else if (lastY < oldViewY) { // and bottom
+                        swipeToRightUpperCorner(view, velocity);
                     }
-
-                } else if (lastX < oldViewX && Math.abs(lastX - oldViewX) > 100) { // to left
-
-                    Log.i("actionUp", "движемся влево");
-
-                    if (lastY > oldViewY) { // to top
-
-                        Log.i("actionUp", "и вниз");
-
-                    } else if (lastY < oldViewY) { // to bottom
-
-                        Log.i("actionUp", "и вверх");
-
+                } else if (lastX < oldViewX && Math.abs(lastX - oldViewX) > 300) { // to left
+                    if (lastY > oldViewY) { // and  top
+                        swipeToLeftDownCorner(view, velocity);
+                    } else if (lastY < oldViewY) { // and  bottom
+                        swipeToLeftUpperCorner(view, velocity);
                     }
                 }
-
-//                // GOING TO THE RIGHT
-//                if (Math.abs(oldViewX - lastX) > 200) {
-//                    // AND UP
-//                    if (Math.abs(oldViewY - lastY) > 200) {
-//                        swipeToRightUpperCorner(view);
-//                    }
-//                    // OR DOWN
-//                    else if (Math.abs(oldViewY - lastY) < 200) {
-//                        swipeToRightDownCorner(view);
-//                    }
-//                }
-//
-//                // GOING TO THE LEFT
-//                if (Math.abs(oldViewX - lastX) < 200) {
-//                    // AND UP
-//                    if (Math.abs(oldViewY - lastY) > 0) {
-//                        swipeToLeftUpperCorner(view);
-//                    }
-//                    // OR DOWN
-//                    else if (Math.abs(oldViewY - lastY) < 0) {
-//                        swipeToLeftDownCorner(view);
-//                    }
-//                }
 
                 break;
         }
@@ -579,41 +402,46 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         return true;
     }
 
+    private static long convertVelocity(double velocity) {
+        DecimalFormat df = new DecimalFormat("####0.00");
+        long speedLong = (long) velocity;
+        return ((10 - speedLong) * 100);
+    }
 
-    public void swipeToRightUpperCorner(View playerView) {
+    public void swipeToRightUpperCorner(View playerView, double velocity) {
         Log.d("onFling", "swipeToRightUpperCorner");
         playerView.animate()
                 .translationX(maxX / 2 - DISPLAY_X_OFFSET)
                 .translationY(-maxY / 2 + DISPLAY_Y_OFFSET)
-                .setDuration(400)
+                .setDuration(convertVelocity(velocity))
                 .start();
     }
 
-    public void swipeToRightDownCorner(View playerView) {
+    public void swipeToRightDownCorner(View playerView, double velocity) {
         Log.d("onFling", "swipeToRightDownCorner");
         playerView.animate()
                 .translationX(maxX / 2 - DISPLAY_X_OFFSET)
-                .translationY(maxY / 2 + DISPLAY_Y_OFFSET)
-                .setDuration(100)
+                .translationY(maxY / 2 - DISPLAY_Y_OFFSET)
+                .setDuration(convertVelocity(velocity))
                 .start();
     }
 
-    public void swipeToLeftUpperCorner(View playerView) {
+    public void swipeToLeftUpperCorner(View playerView, double velocity) {
         Log.d("onFling", "swipeToLeftUpperCorner");
-//        playerView.animate()
-//                .translationX(0)
-//                .translationY(0)
-//                .setDuration(100)
-//                .start();
+        playerView.animate()
+                .translationX(-maxX / 2 + DISPLAY_X_OFFSET)
+                .translationY(-maxY / 2 + DISPLAY_Y_OFFSET)
+                .setDuration(convertVelocity(velocity))
+                .start();
     }
 
-    public void swipeToLeftDownCorner(View playerView){
+    public void swipeToLeftDownCorner(View playerView, double velocity) {
         Log.d("onFling", "swipeToLeftDownCorner");
-//        playerView.animate()
-//                .translationX(0)
-//                .translationY(0)
-//                .setDuration(100)
-//                .start();
+        playerView.animate()
+                .translationX(-maxX / 2 + DISPLAY_X_OFFSET)
+                .translationY(maxY / 2 - DISPLAY_Y_OFFSET)
+                .setDuration(convertVelocity(velocity))
+                .start();
     }
 
 
