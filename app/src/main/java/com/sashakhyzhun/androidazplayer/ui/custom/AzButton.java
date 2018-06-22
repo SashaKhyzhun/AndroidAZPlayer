@@ -356,33 +356,95 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 long timerEnd = System.currentTimeMillis();
                 double distance = Math.sqrt((newX- oldX) * (newX- oldX) + (newY- oldY) * (newY- oldY));
                 double velocity = (distance / (timerEnd - timerStart));
-                float offsetX = Math.abs(newX - oldX);
-                float offsetY = Math.abs(newY - oldY);
+                boolean offsetX = Math.abs(newX - oldX) > 200;
+                boolean offsetY = Math.abs(newY - oldY) > 350;
 
-                if (newX > oldX && offsetX > 200) { // right
-                    if (newY < oldY && offsetY > 350) { // and top
+                if (newX > oldX && offsetX) {
+                    // to right
+                    if (newY < oldY && offsetY) {
+                        // and top
                         animHelper.swipeToRightUpperCorner(view, velocity);
                         break;
-                    } else if (newY < oldY && offsetY < 350) { // and bot
+                    } else if (newY > oldY && offsetY) {
+                        // and bot
                         animHelper.swipeToRightDownCorner(view, velocity);
                         break;
                     } else {
-                        animHelper.swipeToHorizontalEdge(view, velocity, true); // just right
+                        // just to right
+                        animHelper.swipeToHorizontalEdge(view, velocity, true);
                         break;
                     }
-
-                } else if (newX < oldX && offsetX > 200) { // left
-                    if (newY < oldY && offsetY > 350) { // and top
+                } else if (newX < oldX && offsetX) {
+                    // to left
+                    if (newY < oldY && offsetY) {
+                        // and top
                         animHelper.swipeToLeftUpperCorner(view, velocity);
                         break;
-                    } else if (newY < oldY && offsetY < 350) { // and bot
+                    } else if (newY > oldY && offsetY) {
+                        // and bot
                         animHelper.swipeToLeftDownCorner(view, velocity);
                         break;
                     } else {
-                        animHelper.swipeToHorizontalEdge(view, velocity, false);  // just left
+                        // just to left
+                        animHelper.swipeToHorizontalEdge(view, velocity, false);
+                        break;
+                    }
+                } else if (newY < oldY && offsetY) {
+                    // to top
+                    if (newX > oldX && offsetX) {
+                        // and right
+                        animHelper.swipeToRightUpperCorner(view, velocity);
+                        break;
+                    } else if (newX < oldX && offsetX) {
+                        // and left
+                        animHelper.swipeToLeftUpperCorner(view, velocity);
+                        break;
+                    } else {
+                        // just to top
+                        animHelper.swipeToVerticalEdge(view, velocity, true);
+                        break;
+                    }
+                } else if (newY > oldY && offsetY) {
+                    // to bot
+                    if (newX > oldX && offsetX) {
+                        // and right
+                        animHelper.swipeToRightDownCorner(view, velocity);
+                        break;
+                    } else if (newX < oldX && offsetX) {
+                        // and left
+                        animHelper.swipeToLeftDownCorner(view, velocity);
+                        break;
+                    } else {
+                        // just to bot
+                        animHelper.swipeToVerticalEdge(view, velocity, false);
                         break;
                     }
                 }
+
+//                if (newX > oldX && offsetX) { // right
+//                    if (newY < oldY && offsetY) { // and top
+//                        animHelper.swipeToRightUpperCorner(view, velocity);
+//                        break;
+//                    } else if (newY < oldY && offsetY) { // and bot
+//                        animHelper.swipeToRightDownCorner(view, velocity);
+//                        break;
+//                    } else {
+//                        animHelper.swipeToHorizontalEdge(view, velocity, true); // just right
+//                        break;
+//                    }
+//
+//                } else if (newX < oldX && offsetX) { // left
+//                    if (newY < oldY && offsetY) { // and top
+//                        animHelper.swipeToLeftUpperCorner(view, velocity);
+//                        break;
+//                    } else if (newY < oldY && offsetY) { // and bot
+//                        animHelper.swipeToLeftDownCorner(view, velocity);
+//                        break;
+//                    } else {
+//                        animHelper.swipeToHorizontalEdge(view, velocity, false);  // just left
+//                        break;
+//                    }
+//                }
 
                 break;
         }

@@ -10,6 +10,7 @@ public class AnimationHelper {
 
     private static final int DISPLAY_Y_OFFSET = 250;
     private static final int DISPLAY_X_OFFSET = 150;
+    private static final int VELOCITY_OFFSET = 150;
 
     private int maxX;
     private int maxY;
@@ -55,7 +56,7 @@ public class AnimationHelper {
 
     public void swipeToVerticalEdge(View playerView, double velocity, boolean toTop) {
         playerAnim(playerView, velocity)
-                .translationX(toTop ? -maxY / 2 + DISPLAY_Y_OFFSET : maxY / 2 - DISPLAY_Y_OFFSET)
+                .translationY(toTop ? -maxY / 2 + DISPLAY_Y_OFFSET : maxY / 2 - DISPLAY_Y_OFFSET)
                 .start();
     }
 
@@ -73,9 +74,10 @@ public class AnimationHelper {
     }
 
     private static long convertVelocity(double velocity) {
-        DecimalFormat df = new DecimalFormat("####0.00");
+        if (velocity < 2) velocity = 2;
+        if (velocity > 8) velocity = 8;
         long speedLong = (long) velocity;
-        return ((10 - speedLong) * 100);
+        return ((10 - speedLong) * 100 - VELOCITY_OFFSET);
     }
 
 
