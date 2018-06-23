@@ -66,7 +66,7 @@ public class MainFragment extends Fragment {
             if (!isFetched && !isFetching) {
                 isFetching = true;
                 buttonPlay.startFetching();
-                new MyFetchAsync().execute();
+                new FetchHLSFileAsync().execute();
                 return;
             }
             switch (buttonPlay.getState()) {
@@ -86,7 +86,7 @@ public class MainFragment extends Fragment {
 
 
     @SuppressLint("StaticFieldLeak")
-    private class MyFetchAsync extends AsyncTask<Object, Object, File> {
+    private class FetchHLSFileAsync extends AsyncTask<Object, Object, File> {
 
         @Override
         protected File doInBackground(Object... params) {
