@@ -85,70 +85,6 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         init(context, attrs);
     }
 
-    private void init(Context context, AttributeSet attrs) {
-        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        Display display = null;
-
-        if (wm != null) {
-            display = wm.getDefaultDisplay();
-            Point displayPoint = new Point();
-            display.getSize(displayPoint);
-            maxX = displayPoint.x;
-            maxY = displayPoint.y;
-        }
-
-        animHelper = new AnimationHelper(maxX, maxY);
-        gestureDetector = new GestureDetector(context, new SingleTapConfirm());
-
-        setOnClickListener(this);
-        setOnTouchListener(this);
-
-        int prefWidthDP = 100;
-        prefWidth = (int) dimension(context, prefWidthDP);
-        prefPadding = (int) dimension(context, 4);
-
-        setLayoutParams(new LinearLayout.LayoutParams(prefWidthDP, prefWidthDP));
-        setPadding(prefPadding, prefPadding, prefPadding, prefPadding);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setElevation(10F);
-        }
-
-        playerButtonPaint = new Paint();
-        playerButtonPaint.setAntiAlias(true);
-        playerButtonPaint.setColor(Color.BLACK);
-
-        trianglePaint = new Paint();
-        trianglePaint.setColor(Color.WHITE);
-        trianglePaint.setStyle(Paint.Style.FILL);
-        trianglePoint = new Point();
-
-        pauseViewInsideRect = new Paint();
-        pauseViewInsideRect.setColor(Color.GREEN);
-
-        RotateAnimation rotateAnim = new RotateAnimation(
-                0,
-                360,
-                Animation.RELATIVE_TO_SELF,
-                0.5f,
-                Animation.RELATIVE_TO_SELF,
-                0.5f
-        );
-        rotateAnim.setDuration(1000);
-        rotateAnim.setRepeatCount(Animation.INFINITE);
-        rotateAnim.setRepeatMode(Animation.RESTART);
-        rotateAnim.setInterpolator(new LinearInterpolator());
-
-        fetchingCircleLineAround = new Paint();
-        fetchingCircleLineAround.setAntiAlias(true);
-        fetchingCircleLineAround.setStyle(Paint.Style.STROKE);
-        fetchingCircleLineAround.setStrokeWidth(dimension(context, 2));
-        fetchingCircleLineAround.setColor(Color.YELLOW);
-
-        playerRectArch = new RectF(0, 0, 0, 0);
-        playerRectAngle = new Rect(0, 0, 0, 0);
-        angleArch = 120;
-    }
-
     @Override
     @SuppressWarnings("SuspiciousNameCombination")
     protected void onDraw(Canvas canvas) {
@@ -215,100 +151,8 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
 
     }
 
-    private Path getInsideTrianglePath(Point point1, int width) {
-        Point point2 = new Point(point1.x, point1.y + width);
-        Point point3 = new Point(point1.x + width, point1.y + (width / 2));
-        Path path = new Path();
-        path.moveTo(point1.x, point1.y);
-        path.lineTo(point2.x, point2.y);
-        path.lineTo(point3.x, point3.y);
-        return path;
-    }
-
-    public PLAYER_STATE getState() {
-        return mState;
-    }
-
-    public void setState(PLAYER_STATE state) {
-        mState = state;
-        switch (state) {
-            case FETCHING:
-                break;
-            case PLAYING:
-                isFetchingAnimRunning = false;
-                startPlayingAnim();
-                break;
-            case COMPLETED:
-                isFetchingAnimRunning = false;
-                angleArch = 120;
-                START_ANGLE_POINT = 90;
-                break;
-            default:
-                isFetchingAnimRunning = false;
-                break;
-        }
-        invalidate();
-    }
-
-    private void startFetchingAnim() {
-        if (!isFetchingAnimRunning) {
-            return;
-        }
-        Handler h = new Handler();
-        h.postDelayed(() -> {
-            if (angleArch >= 350) {
-                angleArch = 0;
-            }
-            angleArch += 10;
-            if (START_ANGLE_POINT >= 350) {
-                START_ANGLE_POINT = 0;
-            }
-            START_ANGLE_POINT += 10;
-            invalidate();
-            startFetchingAnim();
-        }, 50);
-
-    }
-
-    public void startFetching() {
-        setState(PLAYER_STATE.FETCHING);
-        if (!isFetchingAnimRunning) {
-            isFetchingAnimRunning = !isFetchingAnimRunning;
-            startFetchingAnim();
-        }
-    }
-
-    public void startPlayingAnim() {
-        if (getState() != PLAYER_STATE.PLAYING || mMediaPlayer == null) {
-            return;
-        }
-        Handler h = new Handler();
-        h.postDelayed(() -> {
-            angleArch = (mMediaPlayer.getCurrentPosition() * 360) / mMediaPlayer.getDuration();
-            START_ANGLE_POINT = 0;
-            invalidate();
-            startPlayingAnim();
-        }, 1000);
-
-    }
-
     @Override
     public void onClick(View v) {
-    }
-
-    private class SingleTapConfirm extends SimpleOnGestureListener {
-        @Override
-        public boolean onSingleTapUp(MotionEvent event) {
-            return true;
-        }
-    }
-
-    public void setClickedListener(OnClickListener listener) {
-        mListener = listener;
-    }
-
-    public void setMediaPlayer(MediaPlayer mp) {
-        mMediaPlayer = mp;
     }
 
     @Override
@@ -335,12 +179,7 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                         .setDuration(0)
                         .start();
 
-                if (view.getX() <= 0) view.animate().x(0).start();
-                if (view.getY() <= 0) view.animate().y(0).start();
-                if (view.getX() >= maxX - view.getWidth()) view.animate().x(maxX - view.getWidth()).start();
-                if (view.getY() >= maxY - view.getHeight() - ANDROID_ACTION_BAR_OFFSET_Y)
-                    view.animate().y(maxY - view.getHeight() - ANDROID_ACTION_BAR_OFFSET_Y).start();
-
+                handleViewOutOfScreenPosition(view);
                 break;
             case MotionEvent.ACTION_UP:
                 float newX = view.getX();
@@ -353,40 +192,16 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                 boolean offsetY = Math.abs(newY - oldY) > 350;
 
                 if (newX > oldX && offsetX) {
-                    if (newY < oldY && offsetY) {
-                        animHelper.swipeToRightUpperCorner(view, velocity);
-                    } else if (newY > oldY && offsetY) {
-                        animHelper.swipeToRightDownCorner(view, velocity);
-                    } else {
-                        animHelper.swipeToHorizontalEdge(view, velocity, true);
-                    }
+                    handleRightSwipe(newY, offsetY, view, velocity);
                     break;
                 } else if (newX < oldX && offsetX) {
-                    if (newY < oldY && offsetY) {
-                        animHelper.swipeToLeftUpperCorner(view, velocity);
-                    } else if (newY > oldY && offsetY) {
-                        animHelper.swipeToLeftDownCorner(view, velocity);
-                    } else {
-                        animHelper.swipeToHorizontalEdge(view, velocity, false);
-                    }
+                    handleLeftSwipe(newY, offsetY, view, velocity);
                     break;
                 } else if (newY < oldY && offsetY) {
-                    if (newX > oldX && offsetX) {
-                        animHelper.swipeToRightUpperCorner(view, velocity);
-                    } else if (newX < oldX && offsetX) {
-                        animHelper.swipeToLeftUpperCorner(view, velocity);
-                    } else {
-                        animHelper.swipeToVerticalEdge(view, velocity, true);
-                    }
+                    handleTopSwipe(newX, offsetX, view, velocity);
                     break;
                 } else if (newY > oldY && offsetY) {
-                    if (newX > oldX && offsetX) {
-                        animHelper.swipeToRightDownCorner(view, velocity);
-                    } else if (newX < oldX && offsetX) {
-                        animHelper.swipeToLeftDownCorner(view, velocity);
-                    } else {
-                        animHelper.swipeToVerticalEdge(view, velocity, false);
-                    }
+                    handleBottomSwipe(newX, offsetX, view, velocity);
                     break;
                 }
 
@@ -397,5 +212,208 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
         return true;
     }
 
+    public void setClickedListener(OnClickListener listener) {
+        mListener = listener;
+    }
+
+    public void setMediaPlayer(MediaPlayer mp) {
+        mMediaPlayer = mp;
+    }
+
+    public void setState(PLAYER_STATE state) {
+        mState = state;
+        switch (state) {
+            case FETCHING:
+                break;
+            case PLAYING:
+                isFetchingAnimRunning = false;
+                startPlayingAnim();
+                break;
+            case COMPLETED:
+                isFetchingAnimRunning = false;
+                angleArch = 120;
+                START_ANGLE_POINT = 90;
+                break;
+            default:
+                isFetchingAnimRunning = false;
+                break;
+        }
+        invalidate();
+    }
+
+    public void startFetching() {
+        setState(PLAYER_STATE.FETCHING);
+        if (!isFetchingAnimRunning) {
+            isFetchingAnimRunning = !isFetchingAnimRunning;
+            startFetchingAnim();
+        }
+    }
+
+    public void startPlayingAnim() {
+        if (getState() != PLAYER_STATE.PLAYING || mMediaPlayer == null) {
+            return;
+        }
+        Handler h = new Handler();
+        h.postDelayed(() -> {
+            angleArch = (mMediaPlayer.getCurrentPosition() * 360) / mMediaPlayer.getDuration();
+            START_ANGLE_POINT = 0;
+            invalidate();
+            startPlayingAnim();
+        }, 1000);
+
+    }
+
+    public PLAYER_STATE getState() {
+        return mState;
+    }
+
+    private Path getInsideTrianglePath(Point point1, int width) {
+        Point point2 = new Point(point1.x, point1.y + width);
+        Point point3 = new Point(point1.x + width, point1.y + (width / 2));
+        Path path = new Path();
+        path.moveTo(point1.x, point1.y);
+        path.lineTo(point2.x, point2.y);
+        path.lineTo(point3.x, point3.y);
+        return path;
+    }
+
+    private void init(Context context, AttributeSet attrs) {
+        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        Display display = null;
+
+        if (wm != null) {
+            display = wm.getDefaultDisplay();
+            Point displayPoint = new Point();
+            display.getSize(displayPoint);
+            maxX = displayPoint.x;
+            maxY = displayPoint.y;
+        }
+
+        animHelper = new AnimationHelper(maxX, maxY);
+        gestureDetector = new GestureDetector(context, new SingleTapConfirm());
+
+        setOnClickListener(this);
+        setOnTouchListener(this);
+
+        int prefWidthDP = 100;
+        prefWidth = (int) dimension(context, prefWidthDP);
+        prefPadding = (int) dimension(context, 4);
+
+        setLayoutParams(new LinearLayout.LayoutParams(prefWidthDP, prefWidthDP));
+        setPadding(prefPadding, prefPadding, prefPadding, prefPadding);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setElevation(10F);
+        }
+
+        playerButtonPaint = new Paint();
+        playerButtonPaint.setAntiAlias(true);
+        playerButtonPaint.setColor(Color.BLACK);
+
+        trianglePaint = new Paint();
+        trianglePaint.setColor(Color.WHITE);
+        trianglePaint.setStyle(Paint.Style.FILL);
+        trianglePoint = new Point();
+
+        pauseViewInsideRect = new Paint();
+        pauseViewInsideRect.setColor(Color.GREEN);
+
+        RotateAnimation rotateAnim = new RotateAnimation(
+                0,
+                360,
+                Animation.RELATIVE_TO_SELF,
+                0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f
+        );
+        rotateAnim.setDuration(1000);
+        rotateAnim.setRepeatCount(Animation.INFINITE);
+        rotateAnim.setRepeatMode(Animation.RESTART);
+        rotateAnim.setInterpolator(new LinearInterpolator());
+
+        fetchingCircleLineAround = new Paint();
+        fetchingCircleLineAround.setAntiAlias(true);
+        fetchingCircleLineAround.setStyle(Paint.Style.STROKE);
+        fetchingCircleLineAround.setStrokeWidth(dimension(context, 2));
+        fetchingCircleLineAround.setColor(Color.YELLOW);
+
+        playerRectArch = new RectF(0, 0, 0, 0);
+        playerRectAngle = new Rect(0, 0, 0, 0);
+        angleArch = 120;
+    }
+
+    private void startFetchingAnim() {
+        if (!isFetchingAnimRunning) {
+            return;
+        }
+        Handler h = new Handler();
+        h.postDelayed(() -> {
+            if (angleArch >= 350) {
+                angleArch = 0;
+            }
+            angleArch += 10;
+            if (START_ANGLE_POINT >= 350) {
+                START_ANGLE_POINT = 0;
+            }
+            START_ANGLE_POINT += 10;
+            invalidate();
+            startFetchingAnim();
+        }, 50);
+
+    }
+
+    private void handleViewOutOfScreenPosition(View view) {
+        if (view.getX() <= 0) view.animate().x(0).start();
+        if (view.getY() <= 0) view.animate().y(0).start();
+        if (view.getX() >= maxX - view.getWidth()) view.animate().x(maxX - view.getWidth()).start();
+        if (view.getY() >= maxY - view.getHeight() - ANDROID_ACTION_BAR_OFFSET_Y)
+            view.animate().y(maxY - view.getHeight() - ANDROID_ACTION_BAR_OFFSET_Y).start();
+    }
+
+    private void handleRightSwipe(float newY, boolean offsetY, View view, double velocity) {
+        if (newY < oldY && offsetY) {
+            animHelper.swipeToRightUpperCorner(view, velocity);
+        } else if (newY > oldY && offsetY) {
+            animHelper.swipeToRightDownCorner(view, velocity);
+        } else {
+            animHelper.swipeToHorizontalEdge(view, velocity, true);
+        }
+    }
+
+    private void handleLeftSwipe(float newY, boolean offsetY, View view, double velocity) {
+        if (newY < oldY && offsetY) {
+            animHelper.swipeToLeftUpperCorner(view, velocity);
+        } else if (newY > oldY && offsetY) {
+            animHelper.swipeToLeftDownCorner(view, velocity);
+        } else {
+            animHelper.swipeToHorizontalEdge(view, velocity, false);
+        }
+    }
+
+    private void handleTopSwipe(float newX, boolean offsetX, View view, double velocity) {
+        if (newX > oldX && offsetX) {
+            animHelper.swipeToRightUpperCorner(view, velocity);
+        } else if (newX < oldX && offsetX) {
+            animHelper.swipeToLeftUpperCorner(view, velocity);
+        } else {
+            animHelper.swipeToVerticalEdge(view, velocity, true);
+        }
+    }
+
+    private void handleBottomSwipe(float newX, boolean offsetX, View view, double velocity) {
+        if (newX > oldX && offsetX) {
+            animHelper.swipeToRightDownCorner(view, velocity);
+        } else if (newX < oldX && offsetX) {
+            animHelper.swipeToLeftDownCorner(view, velocity);
+        } else {
+            animHelper.swipeToVerticalEdge(view, velocity, false);
+        }
+    }
+
+    private class SingleTapConfirm extends SimpleOnGestureListener {
+        @Override
+        public boolean onSingleTapUp(MotionEvent event) {
+            return true;
+        }
+    }
 
 }
