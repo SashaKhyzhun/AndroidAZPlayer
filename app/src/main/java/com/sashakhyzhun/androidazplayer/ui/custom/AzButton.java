@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -26,6 +27,7 @@ import android.widget.LinearLayout;
 
 import com.sashakhyzhun.androidazplayer.util.AnimationHelper;
 
+import static com.sashakhyzhun.androidazplayer.util.Constants.ANDROID_ACTION_BAR_OFFSET_Y;
 import static com.sashakhyzhun.androidazplayer.util.DeviceUtil.dimension;
 
 public class AzButton extends View implements View.OnClickListener, View.OnTouchListener {
@@ -332,6 +334,13 @@ public class AzButton extends View implements View.OnClickListener, View.OnTouch
                         .y(event.getRawY() + oldValueY)
                         .setDuration(0)
                         .start();
+
+                if (view.getX() <= 0) view.animate().x(0).start();
+                if (view.getY() <= 0) view.animate().y(0).start();
+                if (view.getX() >= maxX - view.getWidth()) view.animate().x(maxX - view.getWidth()).start();
+                if (view.getY() >= maxY - view.getHeight() - ANDROID_ACTION_BAR_OFFSET_Y)
+                    view.animate().y(maxY - view.getHeight() - ANDROID_ACTION_BAR_OFFSET_Y).start();
+
                 break;
             case MotionEvent.ACTION_UP:
                 float newX = view.getX();

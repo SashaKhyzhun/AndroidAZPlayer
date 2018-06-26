@@ -12,8 +12,10 @@ public class Constants {
     public static final String MP3 = ".mp3";
     public static final String FILENAME_PREF = "filename_";
 
-
     static final String EXT_X_ENDLIST = "EXT-X-ENDLIST";
     static final String EXTINF = "#EXTINF";
+
+
+    public static final int ANDROID_ACTION_BAR_OFFSET_Y = 210;
 
 }
