@@ -5,13 +5,12 @@ import android.view.ViewPropertyAnimator;
 
 public class AnimationHelper {
 
-    private static final int DISPLAY_Y_OFFSET = 250;
-    private static final int DISPLAY_X_OFFSET = 150;
     private static final int VELOCITY_OFFSET = 150;
-
+    private static final int offsetX = 20;
     private int maxX;
     private int maxY;
 
+    //todo: replace manual offset with '+-view.getHeight() / +-view.getWidth()'
     public AnimationHelper(int maxX, int maxY) {
         this.maxX = maxX;
         this.maxY = maxY;
@@ -19,41 +18,45 @@ public class AnimationHelper {
 
     public void swipeToRightUpperCorner(View playerView, double velocity) {
         playerAnim(playerView, velocity,
-                maxX / 2 - DISPLAY_X_OFFSET,
-                -maxY / 2 + DISPLAY_Y_OFFSET)
+                maxX / 2 - playerView.getWidth() / 2 - offsetX,
+                -maxY / 2 + playerView.getHeight())
                 .start();
     }
 
     public void swipeToRightDownCorner(View playerView, double velocity) {
         playerAnim(playerView, velocity,
-                maxX / 2 - DISPLAY_X_OFFSET,
-                maxY / 2 - DISPLAY_Y_OFFSET)
+                maxX / 2 - playerView.getWidth() / 2 - offsetX,
+                maxY / 2 - playerView.getHeight())
                 .start();
     }
 
     public void swipeToLeftUpperCorner(View playerView, double velocity) {
         playerAnim(playerView, velocity,
-                -maxX / 2 + DISPLAY_X_OFFSET,
-                -maxY / 2 + DISPLAY_Y_OFFSET)
+                -maxX / 2 + playerView.getWidth() / 2 + offsetX,
+                -maxY / 2 + playerView.getHeight())
                 .start();
     }
 
     public void swipeToLeftDownCorner(View playerView, double velocity) {
         playerAnim(playerView, velocity,
-                -maxX / 2 + DISPLAY_X_OFFSET,
-                maxY / 2 - DISPLAY_Y_OFFSET)
+                -maxX / 2 + playerView.getWidth() / 2 + offsetX,
+                maxY / 2 - playerView.getHeight())
                 .start();
     }
 
     public void swipeToHorizontalEdge(View playerView, double velocity, boolean toRight) {
         playerAnim(playerView, velocity)
-                .translationX(toRight ? maxX / 2 - DISPLAY_X_OFFSET : -maxX / 2 + DISPLAY_X_OFFSET)
+                .translationX(toRight
+                        ? maxX / 2 - playerView.getWidth() / 2
+                        : -maxX / 2 + playerView.getWidth() / 2)
                 .start();
     }
 
     public void swipeToVerticalEdge(View playerView, double velocity, boolean toTop) {
         playerAnim(playerView, velocity)
-                .translationY(toTop ? -maxY / 2 + DISPLAY_Y_OFFSET : maxY / 2 - DISPLAY_Y_OFFSET)
+                .translationY(toTop
+                        ? -maxY / 2 + playerView.getHeight()
+                        : maxY / 2 - playerView.getHeight())
                 .start();
     }
 

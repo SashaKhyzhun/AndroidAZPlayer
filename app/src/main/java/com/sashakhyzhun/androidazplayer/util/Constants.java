@@ -16,6 +16,6 @@ public class Constants {
     static final String EXTINF = "#EXTINF";
 
 
-    public static final int ANDROID_ACTION_BAR_OFFSET_Y = 210;
+    public static final int ANDROID_ACTION_BAR_OFFSET_Y = 205;
 
 }
