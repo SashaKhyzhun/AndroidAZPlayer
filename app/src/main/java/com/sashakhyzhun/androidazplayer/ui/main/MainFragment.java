@@ -157,6 +157,8 @@ public class MainFragment extends Fragment {
     private void downloadAudio(final Chunk chunkFirst, final Chunk chunkSecond) {
         final String fullUrl = URL_BASE + chunkFirst.getName();
 
+        // here I need to download 1 chunk with 2 threads.
+        // now it 's 1 chunk with 1 thread.
         Thread t1 = new Thread(() -> handleThread(chunkFirst, fullUrl));
         Thread t2 = new Thread(() -> handleThread(chunkSecond, fullUrl));
 
