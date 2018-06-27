@@ -36,5 +36,9 @@ dependencies {
     api 'com.android.support:appcompat-v7:25.4.0'
     testImplementation 'junit:junit:4.12'
 
+    api group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.5'
+    api 'com.squareup.retrofit2:retrofit:2.4.0'
+    api 'com.squareup.retrofit2:adapter-rxjava2:2.4.0'
+
 
 }

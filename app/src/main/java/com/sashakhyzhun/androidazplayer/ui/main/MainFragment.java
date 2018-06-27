@@ -3,10 +3,12 @@ package com.sashakhyzhun.androidazplayer.ui.main;
 import android.annotation.SuppressLint;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,15 +29,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXTM3U;
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXT_X_MEDIA;
@@ -156,11 +151,19 @@ public class MainFragment extends Fragment {
 
     private void downloadAudio(final Chunk chunkFirst, final Chunk chunkSecond) {
         final String fullUrl = URL_BASE + chunkFirst.getName();
+        Log.d("ASD", "chunkFirst getOffset = " + chunkFirst.getOffset());
+        Log.d("ASD", "chunkFirst getLength = " + chunkFirst.getLength());
+
+        Log.d("ASD", "chunkSecond getOffset = " + chunkSecond.getOffset());
+        Log.d("ASD", "chunkSecond getLength = " + chunkSecond.getLength());
+
+        Log.d("ASD", "*********************************************");
+
 
         // here I need to download 1 chunk with 2 threads.
         // now it 's 1 chunk with 1 thread.
-        Thread t1 = new Thread(() -> handleThread(chunkFirst, fullUrl));
-        Thread t2 = new Thread(() -> handleThread(chunkSecond, fullUrl));
+        Thread t1 = new Thread(() -> downloadTheFile(chunkFirst, fullUrl));
+        Thread t2 = new Thread(() -> downloadTheFile(chunkSecond, fullUrl));
 
         t1.start();
         if (chunkSecond != null) {
@@ -169,7 +172,7 @@ public class MainFragment extends Fragment {
 
     }
 
-    private File handleThread(final Chunk chunk, final String fullUrl) {
+    private File downloadTheFile(final Chunk chunk, final String fullUrl) {
         int count = 0;
         int total = 0;
         File result = null;
@@ -242,7 +245,7 @@ public class MainFragment extends Fragment {
                 output.flush();
                 output.close();
 
-                play(downloadingMediaFile);
+                concatenateAndPlay(downloadingMediaFile);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -250,7 +253,7 @@ public class MainFragment extends Fragment {
 
     }
 
-    private void play(File mediaFile) {
+    private void concatenateAndPlay(File mediaFile) {
         try {
             FileInputStream fileInputStream = new FileInputStream(mediaFile);
             mp.reset();
