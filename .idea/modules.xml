@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/AndroidAZPlayer.iml" filepath="$PROJECT_DIR$/AndroidAZPlayer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AndroidAzPlayer.iml" filepath="$PROJECT_DIR$/AndroidAzPlayer.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

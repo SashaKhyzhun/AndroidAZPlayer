@@ -27,8 +27,15 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXTM3U;
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXT_X_MEDIA;
@@ -145,6 +152,8 @@ public class MainFragment extends Fragment {
     }
 
 
+
+
     private void downloadAudio(final Chunk chunkFirst, final Chunk chunkSecond) {
         final String fullUrl = URL_BASE + chunkFirst.getName();
 
@@ -166,6 +175,7 @@ public class MainFragment extends Fragment {
             URL url = new URL(fullUrl);
             URLConnection urlConnection = url.openConnection();
             urlConnection.setRequestProperty("Range", "bytes=" + chunk.getOffset() + "-" + (chunk.getLength() + chunk.getOffset()));
+
             HttpURLConnection connection = (HttpURLConnection) urlConnection;
             connection.setRequestMethod("GET");
             connection.connect();

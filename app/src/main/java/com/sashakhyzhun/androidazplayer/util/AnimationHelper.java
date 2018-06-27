@@ -10,7 +10,6 @@ public class AnimationHelper {
     private int maxX;
     private int maxY;
 
-    //todo: replace manual offset with '+-view.getHeight() / +-view.getWidth()'
     public AnimationHelper(int maxX, int maxY) {
         this.maxX = maxX;
         this.maxY = maxY;
