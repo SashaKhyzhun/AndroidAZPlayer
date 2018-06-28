@@ -36,9 +36,14 @@ dependencies {
     api 'com.android.support:appcompat-v7:25.4.0'
     testImplementation 'junit:junit:4.12'
 
-    api group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.5'
-    api 'com.squareup.retrofit2:retrofit:2.4.0'
-    api 'com.squareup.retrofit2:adapter-rxjava2:2.4.0'
+    // network
+    implementation "com.squareup.retrofit2:adapter-rxjava2:$rootProject.rxjavaAdapter"
+    implementation "com.squareup.retrofit2:retrofit:$rootProject.retrofit"
+    implementation "com.google.code.gson:gson:$rootProject.gson"
+    implementation "com.squareup.retrofit2:converter-gson:$rootProject.retrofit"
+
+    implementation "io.reactivex.rxjava2:rxjava:$rootProject.rxjava2Version"
+    implementation "io.reactivex.rxjava2:rxandroid:$rootProject.rxandroidVersion"
 
 
 }

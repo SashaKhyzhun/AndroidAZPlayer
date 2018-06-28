@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -15,6 +16,8 @@ import android.view.ViewGroup;
 
 import com.sashakhyzhun.androidazplayer.R;
 import com.sashakhyzhun.androidazplayer.data.model.Chunk;
+import com.sashakhyzhun.androidazplayer.network.HlsRequests;
+import com.sashakhyzhun.androidazplayer.network.RetrofitClient;
 import com.sashakhyzhun.androidazplayer.ui.custom.AzButton;
 import com.sashakhyzhun.androidazplayer.util.HlsHelper;
 import com.sashakhyzhun.androidazplayer.util.TextHelper;
@@ -30,7 +33,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+import okhttp3.ResponseBody;
 
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXTM3U;
 import static com.sashakhyzhun.androidazplayer.util.Constants.EXT_X_MEDIA;
@@ -42,6 +54,7 @@ import static com.sashakhyzhun.androidazplayer.util.Constants.URL_FILE;
 
 public class MainFragment extends Fragment {
 
+    private static final String TAG = MainFragment.class.getSimpleName();
     private boolean isFetching = false;
     private boolean isFetched = false;
     private int nextChunkArrive = 0;
@@ -51,10 +64,54 @@ public class MainFragment extends Fragment {
     private AzButton buttonPlay;
     private File downloadingMediaFile;
 
+    ExecutorService executorService;
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mp = new MediaPlayer();
+
+        executorService = Executors.newFixedThreadPool(2);
+        Chunk a = new Chunk();
+        a.setOffset(0);
+        a.setLength(363780);
+        a.setName("hls_a256K.ts");
+        Chunk b = new Chunk();
+        b.setOffset(363780);
+        b.setLength(367164);
+        b.setName("hls_a256K.ts");
+        test(a, b);
+    }
+
+    @SuppressLint("CheckResult")
+    private void test(Chunk chunkA, Chunk chunkB) {
+        HlsRequests retrofitInterface = RetrofitClient.getRetrofit();
+
+        Observable<ResponseBody> a = retrofitInterface
+                .downloadChunk(chunkA.getName(), getRange(chunkA))
+                .doOnSubscribe(d -> Log.d(TAG, "test: a"))
+                .doOnTerminate(() -> Log.d(TAG, "test: a terminate"));
+
+        Observable<ResponseBody> b = retrofitInterface
+                .downloadChunk(chunkB.getName(), getRange(chunkB))
+                .doOnSubscribe(d -> Log.d(TAG, "test: b"))
+                .doOnTerminate(() -> Log.d(TAG, "test: b terminate"));
+        Log.d(TAG, "test: ");
+
+        List<ObservableSource<ResponseBody>> observableSources = new ArrayList<>();
+        observableSources.add(a);
+        observableSources.add(b);
+        Observable.concatEager(observableSources)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        result -> Log.d(TAG, "test: success: " + result),
+                        error -> Log.d(TAG, "test: error", error),
+                        () -> Log.d(TAG, "test: complete"));
+    }
+
+    @NonNull
+    private String getRange(Chunk chunkA) {
+        return "bytes=" + chunkA.getOffset() + "-" + (chunkA.getLength() + chunkA.getOffset());
     }
 
     @Nullable
@@ -149,7 +206,7 @@ public class MainFragment extends Fragment {
 
 
 
-    private void downloadAudio(final Chunk chunkFirst, final Chunk chunkSecond) {
+    private void downloadAudio(final Chunk chunkFirst, @Nullable final Chunk chunkSecond) {
         final String fullUrl = URL_BASE + chunkFirst.getName();
         Log.d("ASD", "chunkFirst getOffset = " + chunkFirst.getOffset());
         Log.d("ASD", "chunkFirst getLength = " + chunkFirst.getLength());

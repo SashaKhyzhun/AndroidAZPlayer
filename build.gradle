@@ -25,3 +25,14 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+ext {
+    gsonVersion = '2.8.0'
+    rx2FastAndroidNetworking = '1.0.0'
+    retrofit = '2.4.0'
+    gson = '2.8.4'
+    rxjava2Version = '2.1.12'
+    rxandroidVersion = '2.0.2'
+    rxjavaAdapter = '2.4.0'
+    rxbinding = '2.0.0'
+}

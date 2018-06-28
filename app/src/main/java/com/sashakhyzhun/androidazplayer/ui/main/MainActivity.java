@@ -28,8 +28,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         loadCurrentFragment();
-
-        testZip();
     }
 
     /**
@@ -43,44 +41,6 @@ public class MainActivity extends AppCompatActivity {
         fm.replace(R.id.frame_main, fragment, null);
         fm.commitAllowingStateLoss();
     }
-
-    private void testZip() {
-
-//        getOffset = 0
-//        getLength = 363780
-//        getOffset = 730944
-//        getLength = 365096
-
-        Chunk chunkA = new Chunk();
-        chunkA.setOffset(0);
-        chunkA.setLength(363780);
-        Chunk chunkB = new Chunk();
-        chunkB.setOffset(363780);
-        chunkB.setLength(367164);
-
-        String url = "http://pubcache1.arkiva.de/test/hls_a256K.ts/";
-        HlsRequests client = RetrofitClient.getRetrofit(url).create(HlsRequests.class);
-
-        Observable<ResponseBody> respA = client
-                .downloadChunk("bytes=" + chunkA.getOffset() + "-" + (chunkA.getLength() + chunkA.getOffset()))
-                .doOnTerminate(() -> Log.i("test", "respA called"));
-
-        Observable<ResponseBody> respB = client
-                .downloadChunk("bytes=" + chunkB.getOffset() + "-" + (chunkB.getLength() + chunkB.getOffset()))
-                .doOnTerminate(() -> Log.i("test", "respB called"));
-
-        Disposable result = Observable
-                .zip(respA, respB, new BiFunction<ResponseBody, ResponseBody, File>() {
-                    @Override
-                    public File apply(ResponseBody responseBody, ResponseBody responseBody2) throws Exception {
-                        Log.i("test", "apply");
-                        return new File("");
-                    }
-                })
-                .subscribeOn(Schedulers.io())
-                .subscribe();
-    }
-
 
 
 }
