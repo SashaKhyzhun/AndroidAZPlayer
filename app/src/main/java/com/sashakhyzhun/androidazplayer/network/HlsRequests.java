@@ -1,8 +1,5 @@
 package com.sashakhyzhun.androidazplayer.network;
 
-
-import com.sashakhyzhun.androidazplayer.data.model.Chunk;
-
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import okhttp3.Request;

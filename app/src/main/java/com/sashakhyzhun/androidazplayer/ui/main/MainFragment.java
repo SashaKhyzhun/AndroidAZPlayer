@@ -40,7 +40,9 @@ import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
+import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
@@ -84,23 +86,29 @@ public class MainFragment extends Fragment {
 
     @SuppressLint("CheckResult")
     private void test(Chunk chunkA, Chunk chunkB) {
+        Log.d(TAG, "*** Let's start ****");
         HlsRequests retrofitInterface = RetrofitClient.getRetrofit();
 
         Observable<ResponseBody> a = retrofitInterface
                 .downloadChunk(chunkA.getName(), getRange(chunkA))
                 .doOnSubscribe(d -> Log.d(TAG, "test: a"))
-                .doOnTerminate(() -> Log.d(TAG, "test: a terminate"));
+                .doOnTerminate(() -> Log.d(TAG, "test: a terminate"))
+                .subscribeOn(Schedulers.io());
 
         Observable<ResponseBody> b = retrofitInterface
                 .downloadChunk(chunkB.getName(), getRange(chunkB))
                 .doOnSubscribe(d -> Log.d(TAG, "test: b"))
-                .doOnTerminate(() -> Log.d(TAG, "test: b terminate"));
-        Log.d(TAG, "test: ");
+                .doOnTerminate(() -> Log.d(TAG, "test: b terminate"))
+                .subscribeOn(Schedulers.io());
 
-        List<ObservableSource<ResponseBody>> observableSources = new ArrayList<>();
-        observableSources.add(a);
-        observableSources.add(b);
-        Observable.concatEager(observableSources)
+
+        Observable
+                .zip(a, b, (responseBody1, responseBody2) -> {
+                    Log.d(TAG, "zip body1 = " + responseBody1);
+                    Log.d(TAG, "zip body2 = " + responseBody2);
+                    Log.d(TAG, "zip apply");
+                    return new File("");
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
