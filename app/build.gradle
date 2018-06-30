@@ -45,5 +45,7 @@ dependencies {
     implementation "io.reactivex.rxjava2:rxjava:$rootProject.rxjava2Version"
     implementation "io.reactivex.rxjava2:rxandroid:$rootProject.rxandroidVersion"
 
+    implementation 'com.snatik:storage:2.1.0'
+
 
 }
