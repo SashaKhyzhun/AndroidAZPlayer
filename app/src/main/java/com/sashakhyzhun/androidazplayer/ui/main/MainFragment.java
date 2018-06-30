@@ -131,27 +131,29 @@ public class MainFragment extends Fragment {
                     return true;
                 })
                 .subscribeOn(Schedulers.io())
-                .subscribe(file -> {
-                    Log.d(TAG, "parallelChunkDownload: onNext");
-                    mChunkLinkedList.removeFirst();
-                    if (!mChunkLinkedList.isEmpty()) {
-                        Pair<Chunk, Chunk> chunkPair = mChunkLinkedList.getFirst();
-                        Observable<ResponseBody> a = downloadChunkObservable(chunkPair.first)
-                                .subscribeOn(Schedulers.from(executorService));
-                        Observable<ResponseBody> b = downloadChunkObservable(chunkPair.second)
-                                .subscribeOn(Schedulers.from(executorService));
-                        parallelChunkDownload(a, b);
-                    } else {
-                        checkIfNeedToDownloadPairLessChunk();
-                    }
+                .subscribe(
+                        file -> {
+                            Log.d(TAG, "parallelChunkDownload: onNext");
+                            mChunkLinkedList.removeFirst();
+                            if (!mChunkLinkedList.isEmpty()) {
+                                Pair<Chunk, Chunk> chunkPair = mChunkLinkedList.getFirst();
+                                Observable<ResponseBody> a = downloadChunkObservable(chunkPair.first)
+                                        .subscribeOn(Schedulers.from(executorService));
+                                Observable<ResponseBody> b = downloadChunkObservable(chunkPair.second)
+                                        .subscribeOn(Schedulers.from(executorService));
+                                parallelChunkDownload(a, b);
+                            } else {
+                                checkIfNeedToDownloadPairLessChunk();
+                            }
 
-                    if (buttonPlay.getState() == AzButton.PLAYER_STATE.FETCHING) {
-                        //File finalFile = getFullSongFile();
-                        play(storage.getFile(storagePath + FULL_SONG_FILE_NAME));
-                    }
-                }, error -> {
-                    Log.d(TAG, "parallelChunkDownload: error", error);
-                });
+                            if (buttonPlay.getState() == AzButton.PLAYER_STATE.FETCHING) {
+                                //File finalFile = getFullSongFile();
+                                play(storage.getFile(storagePath + FULL_SONG_FILE_NAME));
+                            }
+                        },
+                        error -> Log.d(TAG, "parallelChunkDownload: onError", error),
+                        () -> Log.d(TAG, "parallelChunkDownload: onComplete")
+                );
         mCompositeDisposable.add(d);
     }
 
@@ -164,21 +166,20 @@ public class MainFragment extends Fragment {
     }
 
     private void appendChunkToFile(String chunkName) {
-        checkFullSongExist();
+        //checkFullSongExist();
 
-        byte[] bytes = new byte[0];
+        byte[] chunkBytes = new byte[0];
         try {
-            bytes = convertFleToBytes(storage.getFile(storagePath + chunkName));
+            chunkBytes = convertFleToBytes(storage.getFile(storagePath + chunkName));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Log.d(TAG, "appendChunkToFile: fullSong size = " + storage.getFile(storagePath + FULL_SONG_FILE_NAME).length());
-        storage.appendFile(storagePath + FULL_SONG_FILE_NAME, bytes);
-    }
 
-    private void checkFullSongExist() {
-        if (!storage.isFileExist(storagePath + FULL_SONG_FILE_NAME)) {
-            storage.createFile(storagePath + FULL_SONG_FILE_NAME, "");
+        boolean exist = storage.getFile(storagePath + FULL_SONG_FILE_NAME).exists();
+        if (!exist) {
+            storage.createFile(storagePath + FULL_SONG_FILE_NAME, chunkBytes);
+        } else {
+            storage.appendFile(storagePath + FULL_SONG_FILE_NAME, chunkBytes);
         }
     }
 
@@ -237,7 +238,6 @@ public class MainFragment extends Fragment {
 
     private Observable<ResponseBody> downloadChunkObservable(Chunk chunk) {
         HlsRequests retrofitInterface = RetrofitClient.getRetrofit();
-        Log.d(TAG, "downloadChunkObservable: " + chunk);
         Log.d(TAG, "downloadChunkObservable: " + getRange(chunk));
         return retrofitInterface.downloadChunk(chunk.getName(), getRange(chunk))
                 .doOnSubscribe(d -> {
@@ -336,13 +336,15 @@ public class MainFragment extends Fragment {
 
         try {
             FileInputStream fileInputStream = new FileInputStream(mediaFile);
+            //fileInputStream.getFD().sync();
             mp.reset();
             mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mp.setDataSource(fileInputStream.getFD());
             fileInputStream.close();
 
+            Log.d(TAG, "play: fileInputStream = " + fileInputStream.getFD());
             mp.setOnCompletionListener(mp -> {
-                Log.d(TAG, "play: OnCompletionListener");
+                Log.d(TAG, "play: OnCompletionListener | fileSize = " + mediaFile.length());
                 buttonPlay.setState(AzButton.PLAYER_STATE.COMPLETED);
                 isFetched = false;
                 isFetching = false;
