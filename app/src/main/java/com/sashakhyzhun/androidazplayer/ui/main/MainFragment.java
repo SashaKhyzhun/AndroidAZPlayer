@@ -27,8 +27,10 @@ import com.snatik.storage.Storage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -63,7 +65,6 @@ public class MainFragment extends Fragment {
     private boolean isFetching = false;
     private boolean isFetched = false;
 
-    private ArrayList<Chunk> mChunks;
     private LinkedList<Pair<Chunk, Chunk>> mChunkLinkedList;
 
     private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
@@ -85,6 +86,35 @@ public class MainFragment extends Fragment {
         storage.createDirectory(storagePath);
         storagePath += "/";
     }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_main, container, false);
+
+        buttonPlay = (AzButton) view.findViewById(R.id.playBtn);
+        buttonPlay.setMediaPlayer(mp);
+        buttonPlay.setClickedListener(v -> {
+            if (!isFetched && !isFetching) {
+                isFetching = true;
+                buttonPlay.startFetching();
+                new FetchHLSFileAsync().execute();
+                return;
+            }
+            switch (buttonPlay.getState()) {
+                case PLAYING:
+                    buttonPlay.setState(AzButton.PLAYER_STATE.PAUSE);
+                    mp.pause();
+                    break;
+                case PAUSE:
+                    buttonPlay.setState(AzButton.PLAYER_STATE.PLAYING);
+                    mp.start();
+                    break;
+            }
+        });
+
+        return view;
+    }
+
 
     private void deleteSongFileIfExists() {
         File songFile = getFullSongFile();
@@ -112,22 +142,19 @@ public class MainFragment extends Fragment {
                 .subscribeOn(Schedulers.from(executorService));
         Observable<ResponseBody> secondChunkObservable = downloadChunkObservable(chunkPair.second)
                 .subscribeOn(Schedulers.from(executorService));
+
         parallelChunkDownload(firstChunkObservable, secondChunkObservable);
     }
 
-    private void parallelChunkDownload(
-            Observable<ResponseBody> firstChunkObservable,
-            Observable<ResponseBody> secondChunkObservable) {
+    private void parallelChunkDownload(Observable<ResponseBody> firstChunkObservable, Observable<ResponseBody> secondChunkObservable) {
 
         Disposable d = Observable
                 .zip(firstChunkObservable, secondChunkObservable, (responseBody, responseBody2) -> {
-                    saveChunk(responseBody, FIRST_CHUNK);
-                    saveChunk(responseBody2, SECOND_CHUNK);
+                    saveAndAppendChunk(responseBody, FIRST_CHUNK);
+                    saveAndAppendChunk(responseBody2, SECOND_CHUNK);
 
                     Log.d(TAG, "apply: appended to file success");
 
-                    appendChunkToFile(FIRST_CHUNK);
-                    appendChunkToFile(SECOND_CHUNK);
                     return true;
                 })
                 .subscribeOn(Schedulers.io())
@@ -157,30 +184,104 @@ public class MainFragment extends Fragment {
         mCompositeDisposable.add(d);
     }
 
-    private void saveChunk(ResponseBody responseBody, String chunkName) {
+    private void saveAndAppendChunk(ResponseBody responseBody, String chunkName) {
         try {
             storage.createFile(storagePath + chunkName, responseBody.bytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
 
-    private void appendChunkToFile(String chunkName) {
-        //checkFullSongExist();
-
-        byte[] chunkBytes = new byte[0];
+        checkFullSongExist();
         try {
-            chunkBytes = convertFleToBytes(storage.getFile(storagePath + chunkName));
+            mergeMp3Files(storage.getFile(storagePath + chunkName));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        boolean exist = storage.getFile(storagePath + FULL_SONG_FILE_NAME).exists();
-        if (!exist) {
-            storage.createFile(storagePath + FULL_SONG_FILE_NAME, chunkBytes);
-        } else {
-            storage.appendFile(storagePath + FULL_SONG_FILE_NAME, chunkBytes);
+
+    private void mergeMp3Files(File chunk) throws IOException {
+        FileInputStream chunkStream = new FileInputStream(chunk); // first source file
+
+        FileInputStream fullSongStream = new FileInputStream(
+                storage.getFile(storagePath + FULL_SONG_FILE_NAME)
+        ); //second source file
+
+        SequenceInputStream SIStream = new SequenceInputStream(fullSongStream, chunkStream);
+
+        FileOutputStream FOStream = new FileOutputStream(
+                storage.getFile(storagePath + FULL_SONG_FILE_NAME)
+        ); //destination file
+
+        int temp;
+        while ((temp = SIStream.read()) != -1) {
+            FOStream.write(temp); // to write to file
         }
+
+        FOStream.close();
+        SIStream.close();
+        chunkStream.close();
+        fullSongStream.close();
+    }
+
+    private void checkIfNeedToDownloadPairLessChunk() {
+        if (mPairlessChunk != null) {
+            Disposable d = downloadChunkObservable(mPairlessChunk)
+                    .subscribeOn(Schedulers.from(executorService))
+                    .doOnNext(responseBody -> {
+                        saveAndAppendChunk(responseBody, LAST_CHUNK);
+                    })
+                    .subscribe(result -> {
+                        mPairlessChunk = null;
+                    }, error -> {
+                        Log.d(TAG, "parallelChunkDownload: error", error);
+                    });
+            mCompositeDisposable.add(d);
+        }
+
+    }
+
+    private void checkFullSongExist() {
+        boolean exist = storage.getFile(storagePath + FULL_SONG_FILE_NAME).exists();
+        if (!exist) storage.createFile(storagePath + FULL_SONG_FILE_NAME, "");
+    }
+
+    private void play(File mediaFile) {
+        Log.d(TAG, "play: " + mediaFile.length());
+
+        try {
+            FileInputStream fileInputStream = new FileInputStream(mediaFile);
+            //fileInputStream.getFD().sync();
+            mp.reset();
+            mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mp.setDataSource(fileInputStream.getFD());
+            fileInputStream.close();
+            mp.setOnCompletionListener(mp -> {
+                Log.d(TAG, "play: OnCompletionListener | fileSize = " + mediaFile.length());
+                buttonPlay.setState(AzButton.PLAYER_STATE.COMPLETED);
+                isFetched = false;
+                isFetching = false;
+
+                //todo: uncomment in the end:
+                //deleteSongFileIfExists();
+            });
+            mp.setOnPreparedListener(mp -> {
+                buttonPlay.setState(AzButton.PLAYER_STATE.PLAYING);
+                mp.start();
+            });
+            mp.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "onError: mp=" + mp + ", what=" + what + ", extras=" + extra);
+                return false;
+            });
+            mp.prepareAsync();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception ee) {
+            ee.printStackTrace();
+        }
+
+        isFetching = false;
+        isFetched = true;
     }
 
     public byte[] convertFleToBytes(File file) throws IOException {
@@ -197,35 +298,14 @@ public class MainFragment extends Fragment {
             }
         }finally {
             try {
-                if (ous != null)
-                    ous.close();
-            } catch (IOException e) {
-            }
+                if (ous != null) ous.close();
+            } catch (IOException e) {}
 
             try {
-                if (ios != null)
-                    ios.close();
-            } catch (IOException e) {
-            }
+                if (ios != null) ios.close();
+            } catch (IOException e) { }
         }
         return ous.toByteArray();
-    }
-
-    private void checkIfNeedToDownloadPairLessChunk() {
-        if (mPairlessChunk != null) {
-            Disposable d = downloadChunkObservable(mPairlessChunk)
-                    .subscribeOn(Schedulers.from(executorService))
-                    .doOnNext(responseBody -> {
-                        saveChunk(responseBody, "chunkLast.mp3");
-                        appendChunkToFile(LAST_CHUNK);
-                    })
-                    .subscribe(result -> {
-                        mPairlessChunk = null;
-                    }, error -> {
-                        Log.d(TAG, "parallelChunkDownload: error", error);
-                    });
-            mCompositeDisposable.add(d);
-        }
     }
 
     @NonNull
@@ -236,6 +316,7 @@ public class MainFragment extends Fragment {
         return new File(folder, FULL_SONG_FILE_NAME);
     }
 
+    @NonNull
     private Observable<ResponseBody> downloadChunkObservable(Chunk chunk) {
         HlsRequests retrofitInterface = RetrofitClient.getRetrofit();
         Log.d(TAG, "downloadChunkObservable: " + getRange(chunk));
@@ -253,33 +334,11 @@ public class MainFragment extends Fragment {
         return "bytes=" + chunk.getOffset() + "-" + (chunk.getLength() + chunk.getOffset());
     }
 
-    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_main, container, false);
-
-        buttonPlay = (AzButton) view.findViewById(R.id.playBtn);
-        buttonPlay.setMediaPlayer(mp);
-        buttonPlay.setClickedListener(v -> {
-            if (!isFetched && !isFetching) {
-                isFetching = true;
-                buttonPlay.startFetching();
-                new FetchHLSFileAsync().execute();
-                return;
-            }
-            switch (buttonPlay.getState()) {
-                case PLAYING:
-                    buttonPlay.setState(AzButton.PLAYER_STATE.PAUSE);
-                    mp.pause();
-                    break;
-                case PAUSE:
-                    buttonPlay.setState(AzButton.PLAYER_STATE.PLAYING);
-                    mp.start();
-                    break;
-            }
-        });
-
-        return view;
+    public void onDestroy() {
+        super.onDestroy();
+        System.gc();
+        mCompositeDisposable.dispose();
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -311,7 +370,7 @@ public class MainFragment extends Fragment {
                 fullUrl = URL_BASE + bestAudio;
                 exts = HlsHelper.retrieveHLS(fullUrl).split("\n");
 
-                mChunks = HlsHelper.getAllChunks(exts);
+                ArrayList<Chunk> mChunks = HlsHelper.getAllChunks(exts);
                 processChunks(mChunks);
 
                 return null;
@@ -329,53 +388,6 @@ public class MainFragment extends Fragment {
                 return;
             }
         }
-    }
-
-    private void play(File mediaFile) {
-        Log.d(TAG, "play: " + mediaFile.length());
-
-        try {
-            FileInputStream fileInputStream = new FileInputStream(mediaFile);
-            //fileInputStream.getFD().sync();
-            mp.reset();
-            mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mp.setDataSource(fileInputStream.getFD());
-            fileInputStream.close();
-
-            Log.d(TAG, "play: fileInputStream = " + fileInputStream.getFD());
-            mp.setOnCompletionListener(mp -> {
-                Log.d(TAG, "play: OnCompletionListener | fileSize = " + mediaFile.length());
-                buttonPlay.setState(AzButton.PLAYER_STATE.COMPLETED);
-                isFetched = false;
-                isFetching = false;
-
-                //todo: uncomment in the end:
-                //deleteSongFileIfExists();
-            });
-            mp.setOnPreparedListener(mp -> {
-                buttonPlay.setState(AzButton.PLAYER_STATE.PLAYING);
-                mp.start();
-            });
-            mp.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "onError: mp=" + mp + ", what=" + what + ", extras=" + extra);
-                return false;
-            });
-            mp.prepareAsync();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception ee) {
-            ee.printStackTrace();
-        }
-
-        isFetching = false;
-        isFetched = true;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        System.gc();
-        mCompositeDisposable.dispose();
     }
 
 }
