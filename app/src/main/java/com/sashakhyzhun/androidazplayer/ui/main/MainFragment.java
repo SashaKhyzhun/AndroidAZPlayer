@@ -54,6 +54,7 @@ public class MainFragment extends Fragment {
 
     private ArrayList<Chunk> mChunks;
 
+    private String TAG = "TAG";
     private ExecutorService executorService;
     private File downloadingMediaFile;
     private AzButton buttonPlay;
@@ -68,7 +69,8 @@ public class MainFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
         buttonPlay = (AzButton) view.findViewById(R.id.playBtn);
@@ -112,7 +114,9 @@ public class MainFragment extends Fragment {
                     if (ext.contains(TYPE_AUDIO)) {
                         ext = ext.replace(EXT_X_MEDIA, "");
                         ext = ext.replace("\"", "");
-                        Map<String, String> audio = TextHelper.splitToMap(ext, ",", "=");
+                        Map<String, String> audio = TextHelper
+                                .splitToMap(ext, ",", "=");
+
                         bestAudio = audio.get("URI");
                     } else {
                         if (!bestAudio.equals("-1")) {
@@ -158,28 +162,35 @@ public class MainFragment extends Fragment {
     private void parallelChunkDownload(final Chunk chunkFirst, final Chunk chunkSecond) {
         final String fullUrl = URL_BASE + chunkFirst.getName();
 
-        Observable<Chunk> firstChunkObservable = handleThread(chunkFirst, fullUrl)
+        Observable<Chunk> firstChunkObservable = downloadAndSaveChunk(chunkFirst, fullUrl)
                 .subscribeOn(Schedulers.from(executorService));
 
-        Observable<Chunk> secondChunkObservable = handleThread(chunkSecond, fullUrl)
+        Observable<Chunk> secondChunkObservable = downloadAndSaveChunk(chunkSecond, fullUrl)
                 .subscribeOn(Schedulers.from(executorService));
 
         Disposable d = Observable
                 .zip(firstChunkObservable, secondChunkObservable, (chunk, chunk2) -> true)
                 .subscribeOn(Schedulers.io())
-                .subscribe();
+                .subscribe(next -> {}, error -> {}, () -> {},
+                        disposable -> {
+                            concatenateChunks();
+                            concatenateChunks();
+                        }
+                );
         mCompositeDisposable.add(d);
     }
 
 
-    private Observable<Chunk> handleThread(final Chunk chunk, final String fullUrl) {
+    private Observable<Chunk> downloadAndSaveChunk(final Chunk chunk, final String fullUrl) {
         int count = 0;
         int total = 0;
         File result;
         try {
             URL url = new URL(fullUrl);
             URLConnection urlConnection = url.openConnection();
-            urlConnection.setRequestProperty("Range", "bytes=" + chunk.getOffset() + "-" + (chunk.getLength() + chunk.getOffset()));
+            urlConnection.setRequestProperty(
+                    "Range", "bytes=" + chunk.getOffset()
+                            + "-" + (chunk.getLength() + chunk.getOffset()));
 
             HttpURLConnection connection = (HttpURLConnection) urlConnection;
             connection.setRequestMethod("GET");
@@ -206,7 +217,7 @@ public class MainFragment extends Fragment {
             chunk.setFile(result);
             chunk.setFullPath(result.getAbsolutePath());
 
-            threadsHaveFinish();
+            //concatenateChunks();
         } catch (Exception ignored) {
         }
 
@@ -214,7 +225,7 @@ public class MainFragment extends Fragment {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private void threadsHaveFinish() {
+    private void concatenateChunks() {
         if (mChunks == null) {
             return;
         }
@@ -251,6 +262,7 @@ public class MainFragment extends Fragment {
         }
 
     }
+
 
     private void play(File mediaFile) {
         try {
